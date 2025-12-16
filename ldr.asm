@@ -1,5 +1,5 @@
 %define SIZE_SECTOR 0x200
-%define FIRST_SEGMENT_RAM 0x50
+%define START_SECTOR 0x50
 %define BOOT_SEGMENT_RAM 0x07C0
 
 ;Ustawienie DS segmentu na początek kodu w RAM
@@ -30,15 +30,15 @@ mov cl, 0x01                    ;Sektor z którego wczytujemy dame
 mov dh, 0x00                    ;Indeks głowicy z którego wczytujemy dane
 mov dl, byte [DiskIndexBoot]    ;Indeks dsku z którego wczytujemy dane
 mov bx, 0x00                    ;Offset pod który wczytujemy dane
-push FIRST_SEGMENT_RAM          ;Segment pod który wcztujemy dane
+push START_SECTOR          ;Segment pod który wcztujemy dane
 pop es
 int 13h
 
     jc PrintErrLoadBootloader
-push FIRST_SEGMENT_RAM
+push START_SECTOR
 pop ds
 mov dl, byte [DiskIndexBoot]
-jmp FIRST_SEGMENT_RAM:Bootloader
+jmp START_SECTOR:Bootloader
 
 PrintErrLoadBootloader:
 ;Wyświetlenie komunikatu o błędzie wczytania danych z dysku
@@ -61,6 +61,7 @@ SizeMsgErrLoadBootloader: dw $ - MsgErrLoadBootloader
 times 512-($-$$) db 0xAA
 
 LoadStage2:
+%include "macro.asm"
 %include "string.asm"
 %include "print.asm"
 %include "loadData.asm"

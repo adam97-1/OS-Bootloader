@@ -30,7 +30,7 @@
 %endmacro
 
 ;Args: segment1, StringAddressOffset, segment2, String2AddressOffset
-%macro StringCmp 4
+%macro stringCmp 4
     push ax
     push bx
     push cx
@@ -101,3 +101,37 @@ FunStringLen:
     .break:
     mov ax, cx
     ret
+
+;Args: Segment, StringAddressOffset
+%macro stringtoUpper 2
+    pusha
+    push ds
+
+    push %1
+    pop ds
+    mov si, %2
+
+    call FunStringtoUpper
+
+    pop ds
+    popa
+%endmacro
+
+FunStringtoUpper:
+    jmp .skip
+    .loop:
+    inc si
+    .skip:
+    cmp byte [ds:si], 0x00
+        je .end
+    cmp  byte [ds:si], 0x60
+        jbe .loop
+    cmp  byte [ds:si], 0x7B
+        jae .loop
+    mov al, byte [ds:si]
+    sub al, 0x20
+    mov byte [ds:si], al
+    jmp .loop
+    .end:
+    ret
+

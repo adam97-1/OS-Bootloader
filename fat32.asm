@@ -15,6 +15,34 @@
     pop bx
 %endmacro
 
+;Args: DestSegment. DestOffset, DirStructSegment, DirStructOffset
+%macro Fat32GetDirOrFileName 4
+    push ds
+    push si
+    push di
+    push ax
+    push bx
+    push cx
+
+    push %3
+    push %1
+    pop es
+    pop ds
+
+    mov si, %4
+    mov di, %2
+
+    call FunFat32GetDirOrFileName
+
+    pop cx
+    pop bx
+    pop ax
+    pop di
+    pop si
+    pop ds
+
+%endmacro
+
 FunFindFAT32InMBR:
     lea bx, [bx + Mbr.Part1]
     mov ax, bx
@@ -38,54 +66,7 @@ FunFindFAT32InMBR:
     mov ax, bx
     ret
 
-%macro Fat32PrintFoldersAndFiles 2
-    pusha
-    push ds
-    push %1
-    pop ds
-    mov si, %2
-    call FunFat32PrintFoldersAndFiles
-    pop ds
-    popa
-%endmacro
-
-FunFat32PrintFoldersAndFiles:
-    jmp .skip
-    .loop:
-    add si, 0x20
-    .skip:
-    cmp byte [si], EndFileInFat
-        je .break
-    cmp byte [si], NoFileInFat
-        je .loop
-    printLn si, 11
-    jmp .loop
-    .break:
-    ret
-;Args: DestSegment, DestSegment, FolderSegment, FolderOffset, PathSegment, PathOffset
-%macro Fat32LoadFolderOrFile 6
-    pusha
-
-    push $1
-    push %2
-    push %3
-    push $4
-    push %5
-    push %6
-    mov bp, sp
-    call FunFat32LoadFolderOrFile
-
-    add sp, 12
-    popa
-%endmacro
-
-
-FunFat32LoadFolderOrFile:
-
-
-
-
-
+; Fat32PopFolderFromPath es, sdsad. ds, asdas
 ;Args: SrcSeg, SrcString, DestSegment, DestString
 %macro Fat32PopFolderFromPath 4
     push ax
@@ -96,9 +77,10 @@ FunFat32LoadFolderOrFile:
     push di
 
     push %1
-    pop ds
     push %3
     pop es
+    pop ds
+
     mov si, %2
     mov di, %4
 
@@ -154,6 +136,182 @@ FunFat32PopFolderFromPath:
     mov byte [es:di], 0x00
     ret
 
+
+%macro Fat32PrintFoldersAndFiles 2
+    pusha
+    push ds
+
+    push %1
+    pop ds
+    mov si, %2
+    call FunFat32PrintFoldersAndFiles
+
+    pop ds
+    popa
+%endmacro
+
+FunFat32PrintFoldersAndFiles:
+    cdecl_entry
+    sub sp, 12
+
+    jmp .skip
+    .loop:
+    add si, 0x20
+    .skip:
+    cmp byte [ds:si], EndFileInFat
+        je .break
+    cmp byte [ds:si], NoFileInFat
+        je .loop
+    Fat32GetDirOrFileName ss, cdecl_var(12), ds, si
+    printLn ss, cdecl_var(12)
+    jmp .loop
+    .break:
+    add sp, 12
+    cdecl_exit
+    ; .TempFileName: times 12  db 0x00
+
+
+%macro FatCheckMaxFilesInCluster 0
+    pusha
+
+    call FunFatCheckMaxFilesInCluster
+
+    popa
+%endmacro
+
+FunFatCheckMaxFilesInCluster:
+    xor eax, eax
+    xor edx, edx
+    xor ebx, ebx
+    mov ax, word [ds:PartMetaData.ClusterSizeInSector]
+    mov bl, byte [ds:PartMetaData.DiskSectorPerPartSector]
+    mul ebx
+    shl eax, 4
+    mov word [ds:PartMetaData.MaxFilesInCluster], ax
+    ret
+
+;Args: DestSegment, DestOffset, FolderSegment, FolderOffset, PathSegment, PathOffset
+%macro Fat32LoadFolderOrFile 6
+    pusha
+    push ds
+    push es
+    push %6
+    push %5
+    push %4
+    push %3
+    push %2
+    push %1
+
+    call FunFat32LoadFolderOrFile
+
+    add sp, 12
+    pop es
+    pop ds
+    popa
+%endmacro
+
+
+%push
+%define TempFileName cdecl_var(18)
+%define TempFileName2 cdecl_var(18 + 12)
+FunFat32LoadFolderOrFile:
+    cdecl_entry
+    xchg bx, bx
+    sub sp, 18
+    sub sp, 12
+
+    xor cx, cx
+    mov es, cdecl_param(2)
+    mov si, cdecl_param(3)
+    xchg bx, bx
+    stringtoUpper cdecl_param(4), cdecl_param(5)
+    xchg bx, bx
+    Fat32PopFolderFromPath cdecl_param(4), cdecl_param(5), ss, TempFileName
+    xchg bx, bx
+    cmp byte [es:si + FileFat.Atribute], 0x08
+     je .NoFoundFolderOrFile
+    .loop:
+    pop ds
+    push START_SECTOR
+    pop ds
+    cmp ecx, dword [ds:PartMetaData.MaxFilesInCluster]
+    pop ds
+        je .NoFilesInThisCluster
+    Fat32GetDirOrFileName ss, TempFileName2, es, si
+    stringCmp ss, TempFileName, ss, TempFileName2
+    je .foundFolderOrFile
+    jne .NoFoundFolderOrFile
+    .back:
+    printLn ss, TempFileName
+    printLn ss, TempFileName2
+
+    add sp, 12
+    add sp, 18
+    cdecl_exit
+
+    .foundFolderOrFile:
+        ;Wczytać plik.
+        ;Jężeli Path ma długość 0 to wyjść z funkcji.
+        ;W przeciwnym wypatku uruchomić rekurencyjnie tą funckję.
+        jmp .back
+    .NoFoundFolderOrFile:
+        inc cx
+        add si, 0x20
+        jmp .loop
+    .NoFilesInThisCluster:
+        ;Sprawdzic czy jest nstępny klaster.
+        ;Jeżeli jest należy go wczytać i kontynułować sprawdzenie.
+        ;W przeciwnym wypadku wyjść z funckji z błędem.
+        printLn START_SECTOR, .MsgNoFileInThisCluster
+        jmp .back
+
+
+    ; .TempFileName: times 16  db 0x00
+    ; .Temp2FileName: times 11  db 0x00
+    .MsgNoFileInThisCluster: db "No file in this cluster.", 0x00
+%pop
+
+%define ASCII_SPACE 0X20
+
+FunFat32GetDirOrFileName:
+    cmp byte [ds:si], EndFileInFat
+        je .end
+    cmp byte [ds:si], NoFileInFat
+        je .end
+    xor cx, cx
+    .loopName:
+    cmp cx, 0x07
+     je .readExt
+    cmp byte [ds:si], ASCII_SPACE
+        je .readExt
+    mov al, byte [ds:si]
+    mov byte [es:di], al
+    inc cx
+    inc si
+    inc di
+    jmp .loopName
+
+    .readExt:
+    mov ax, 0x8
+    sub ax, cx
+    add si, ax
+    xor cx, cx
+
+    .loopExt:
+    cmp cx, 0x02
+     je .end
+    cmp byte [ds:si], ASCII_SPACE
+        je .end
+    mov al, byte [ds:si]
+    mov byte [es:di], al
+    inc cx
+    inc si
+    inc di
+    jmp .loopExt
+
+    .end:
+    mov byte [es:di], 0x00
+    ret
 
 struc Fat
     .FirstByte resb 3
@@ -226,6 +384,7 @@ PartMetaData:
     .DiskSectorPerPartSector: db 0x00
     .ClusterSizeInSector: dw 0x0000
     .CurrentDirCluster: dd 0x00000000
+    .MaxFilesInCluster: dw 0x00000000
 
 
 PartFat32StartAddress: times 16  db 0x00

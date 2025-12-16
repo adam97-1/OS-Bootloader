@@ -35,7 +35,7 @@ PrintErrBootSector:
 ;Wyświetlenie komunikatu o błędzie wczytania danych z dysku
 print MsgErrLoadSector, word [SizeMsgErrLoadSector]
 ;Wyświetlenie kodu błedu
-printByteHex ah
+printByteHex ds, ah
 jmp $
 
 MsgErrLoadSector: db "Load Sector Error: "

@@ -1,38 +1,54 @@
 %macro print 2
     pusha
-    mov si, %1
-    mov cx, %2
-    call PrintString
-    popa
-%endmacro
+    push ds
 
-%macro print 1
-    pusha
-    mov si, %1
+    push %1
+    pop ds
+    mov si, %2
     stringLen si
     mov cx, ax
     call PrintString
+
+    pop ds
     popa
 %endmacro
 
-%macro printByteHex 1
+%macro printByteHex 2
     pusha
-    mov cl, %1
+    push ds
+
+    push %1
+    pop ds
+    mov cl, %2
     call PRINT_BX
+
+    pop ds
     popa
 %endmacro
 
-%macro printWordHex 1
+%macro printWordHex 2
     pusha
-    mov cx, %1
+    push ds
+
+    push %1
+    pop ds
+    mov cx, %2
     call PRINT_WX
+
+    pop ds
     popa
 %endmacro
 
-%macro printDWordHex 1
+%macro printDWordHex 2
     pusha
-    mov ecx, %1
+    push ds
+
+    push %1
+    pop ds
+    mov ecx, %2
     call PRINT_DX
+
+    pop ds
     popa
 %endmacro
 
@@ -52,23 +68,18 @@
     newLine
 %endmacro
 
-%macro printLn 1
-    print %1
+%macro printByteHexLn 2
+    printByteHex %1 ,%2
     newLine
 %endmacro
 
-%macro printByteHexLn 1
-    printByteHex %1
+%macro printWordHexLn 2
+    printWordHex %1, %2
     newLine
 %endmacro
 
-%macro printWordHexLn 1
-    printWordHex %1
-    newLine
-%endmacro
-
-%macro printDWordHexLn 1
-    printByteDWordHex %1
+%macro printDWordHexLn 2
+    printDWordHex %1, %2
     newLine
 %endmacro
 
