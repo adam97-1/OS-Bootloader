@@ -1,0 +1,42 @@
+;Args: segmentDest, offsetDest, sector, count
+%macro diskLoadLBASectors 4
+    push ax
+    sar rax, 16
+    push ax
+    sar, rax, 16
+    push ax
+    sar rax, 16
+    push ax
+    sar, rax, 16
+    push ax
+
+    push %1
+    push %2
+
+    mov rax, %3
+    push ax
+    sar rax, 16
+    push ax
+    sar, rax, 16
+    push ax
+    sar rax, 16
+    push ax
+
+
+    mov eax, %4
+    push ax
+    sar eax, 16
+    push ax
+
+    call FunDiskLoadLBASectors
+
+    add sp, 16
+
+    pop ax
+    sal rax, 16
+    pop ax
+    sal, rax, 16
+    pop ax
+    sal rax, 16
+    pop ax
+%endmacro

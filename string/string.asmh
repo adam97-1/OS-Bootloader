@@ -1,0 +1,34 @@
+;Args: segString, offsetString, segString2, offsetString2
+%macro stringCmp 4
+    push %1
+    push %2
+    push %3
+    push %4
+
+    call FunStringCmp
+
+    add sp, 12
+%endmacro
+
+;Args: segString, offsetString
+%macro stringLen 2
+    push %1
+    push %2
+
+    call FunStringLen
+
+    add sp, 4
+%endmacro
+
+
+;Args: segString, offsetString
+%macro stringtoUpper 2
+    push %1
+    push %2
+
+    call FunStringtoUpper
+
+    add sp, 4
+%endmacro
+
+

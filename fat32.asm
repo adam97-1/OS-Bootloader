@@ -151,7 +151,6 @@ FunFat32PopFolderFromPath:
 %endmacro
 
 FunFat32PrintFoldersAndFiles:
-    cdecl_entry
     sub sp, 12
 
     jmp .skip
