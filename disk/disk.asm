@@ -5,8 +5,7 @@ FunLoadLBASectors:
     %push
     %stacksize large
     %arg segmentDest:word, offsetDest:word, sector:qword, count:dword
-    %assign %$localsize 0
-    %define DAP bp+1
+    %define DAP 1
 
     push bp
     mov bp, sp
@@ -14,36 +13,38 @@ FunLoadLBASectors:
 
     pusha
     push ds
-    mov si, ss:DAP + DAP_st.address
+
     mov ebx, dword [sector]
-    mov dword [ss:si], ebx
+    mov dword [ss:bp + DAP + DAP_st.address], ebx
     mov ebx, dword [sector+4]
-    mov dword [ss:si+4], ebx
+    mov dword [ss:bp + DAP + DAP_st.address+4], ebx
 
-    mov si, ss:DAP + DAP_st.count
     mov bx, [count]
-    mov word [ss:si], bx
+    mov word [ss:bp + DAP + DAP_st.count], bx
 
-    mov si, ss:DAP + DAP_st.offset
     mov bx, [offsetDest]
-    mov word [ss:si], bx
+    mov word [ss:bp + DAP + DAP_st.offset], bx
 
-    mov si, ss:DAP + DAP_st.segment
     mov bx, [segmentDest]
-    mov word [ss:si], bx
+    mov word [ss:bp + DAP + DAP_st.segment], bx
 
 
 
     ;Polecenie wczytania sektorów (LBA)
-    mov ah, 0x42
+
+    mov ax, 0x50
+    mov ds, ax
     ;Indeks dsku z którego wczytujemy dane
-    mov dl, 0x80
+    mov dl, DiskIntex
+    mov ah, 0x42
+
 
     ;Przekazanie adresu na struktóre z parametrami do wczytania
     push ss
     pop ds
+
     mov si, bp
-    inc si
+    add si, DAP
     int 0x13
         ; jc PrintErrBootSector
     .back:

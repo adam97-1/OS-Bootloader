@@ -1,3 +1,12 @@
+%ifndef STRING_ASMH
+%define STRING_ASMH
+
+%ifndef STRING_IMPLEMENTATION
+extern FunStringCmp
+extern FunStringLen
+extern FunStringtoUpper
+%endif
+
 ;Args: segString, offsetString, segString2, offsetString2
 %macro stringCmp 4
     push %1
@@ -31,4 +40,4 @@
     add sp, 4
 %endmacro
 
-
+%endif

@@ -1,13 +1,15 @@
 [BITS 16]
+%define STRING_IMPLEMENTATION
 %include "string.asmh"
 
+global FunStringCmp
 FunStringCmp:
     %push
     %stacksize large
     %arg segString1:word, offsetString1:word, segString2:word, offsetString2:word
-    %assign %$localsize 0
 
-    enter   %$localsize, 0
+    push    bp
+    mov     bp, sp
 
     pusha
     push    ds
@@ -40,13 +42,14 @@ FunStringCmp:
     ret
     %pop
 
+global FunStringLen
 FunStringLen:
     %push
     %stacksize large
     %arg segString:word, offsetString:word
-    %assign %$localsize 0
 
-    enter   %$localsize, 0
+    push    bp
+    mov     bp, sp
 
     push    cx
     push    si
@@ -76,13 +79,14 @@ FunStringLen:
     ret
     %pop
 
+global FunStringtoUpper
 FunStringtoUpper:
     %push
     %stacksize large
     %arg segString:word, offsetString:word
-    %assign %$localsize 0
 
-    enter   %$localsize, 0
+    push    bp
+    mov     bp, sp
 
     pusha
     push ds

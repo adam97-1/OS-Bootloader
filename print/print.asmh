@@ -1,0 +1,86 @@
+%ifndef PRINT_ASMH
+%define PRINT_ASMH
+
+%include "../macro.asmh"
+
+%ifndef PRINT_IMPLEMENTATION
+extern FunPrintString
+extern FunPrintByteHex
+extern FunPrintWordHex
+extern FunPrintWordHex
+extern FunPrintChar
+%endif
+
+
+;Args: segString, offsetString
+%macro printString 2
+    push %1
+    push %2
+
+    call FunPrintString
+
+    add sp, 4
+
+%endmacro
+
+%macro printByteHex 1
+    push %1
+
+    call FunPrintByteHex
+
+    add sp, 1
+%endmacro
+
+%macro printWordHex 1
+    push %1
+
+    call FunPrintWordHex
+
+    add sp, 2
+%endmacro
+
+%macro printDWordHex 1
+
+    pushdw %1
+
+    call FunPrintWordHex
+
+    add sp, 4
+%endmacro
+
+%macro printChar 1
+    push %1
+
+    call FunPrintChar
+
+    add sp, 1
+%endmacro
+
+
+%macro newLine 0
+    printChar 0x0A
+    printChar 0x0D
+%endmacro
+
+%macro printStringLn 2
+    printString %1, %2
+    newLine
+%endmacro
+
+%macro printByteHexLn 2
+    printByteHex %1 ,%2
+    newLine
+%endmacro
+
+%macro printWordHexLn 2
+    printWordHex %1, %2
+    newLine
+%endmacro
+
+%macro printDWordHexLn 2
+    printDWordHex %1, %2
+    newLine
+%endmacro
+
+%endif
+
