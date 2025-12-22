@@ -1,35 +1,34 @@
-%define FAT_SEGMENT 0x1050
+%include "./global_define.asmh"
+%include "./fat32/fat32.asmh"
+%include "./print/print.asmh"
+%include "./string/string.asmh"
+%include "./disk/disk.asmh"
 
-%define FAT32 0x0B
-%define FAT32LBA 0x0C
-%define HIDFAT32 0x1B
-%define HIDFAT32LBA 0x1C
-%define SizeDiskSector 0x200
-
-Bootloader:
+global _start
+_start:
 ;Kimunikat o wczytaniu bootloadera do RAM
 push ds
 push START_SECTOR
 pop ds
 mov byte [DiskIntex], dl
 pop ds
-printLn START_SECTOR, MsgLoadBootloader
+printStringLn START_SECTOR, MsgLoadBootloader
 
 
-FindFAT32InMBR Mbr
+Fat32FindMBR ds, Mbr
 cmp ax, 0x00
     je PrintErrFindFAT32
 jmp LoadPartiction
 
 ;Wypisanie komunikatu o braku partycji typu FAT32
 PrintErrFindFAT32:
-    print START_SECTOR, MsgErrFindFAT32
+    printString START_SECTOR, MsgErrFindFAT32
     jmp $
 
 ;Wczytanie pierwszego sektoru partycji FAT32
 LoadPartiction:
 ;Wyświetlenie komunikatu o wczytaniu pierwszego sektora partycji FAT32
-printLn START_SECTOR, MsgLoadPart
+printStringLn START_SECTOR, MsgLoadPart
 
 ;Kopia danych o partycji FAT32
 cld
@@ -40,7 +39,7 @@ mov si, ax
 mov di, PartFat32StartAddress
 rep movsb
 ;Wczytanie pierwszego sektora partcji FAT32
-loadLBASectors FAT_SEGMENT, 0x0000, dword [PartFat32StartAddress + MbrPart.FirstLbaSect], 1
+diskLoadLBASectors FAT_SEGMENT, 0x0000, dword [PartFat32StartAddress + MbrPart.FirstLbaSect], dword [PartFat32StartAddress + MbrPart.FirstLbaSect+4], 1
 
 ;Przypiasnie segmetu GS do danych w partychi FAT32
 push FAT_SEGMENT
@@ -48,20 +47,20 @@ pop gs
 
 ;Wyświetlenie inforamcji pomocniczych
 newLine
-print START_SECTOR, MsgBytePerSector
-printWordHexLn gs, word [Fat.BytePerSector]
+printString START_SECTOR, MsgBytePerSector
+printWordHexLn word [gs:Fat.BytePerSector]
 
-print START_SECTOR, MsgSectorPerCluster
-printByteHexLn gs, byte [Fat.SectorPerCluster]
+printString START_SECTOR, MsgSectorPerCluster
+printByteHexLn byte [gs:Fat.SectorPerCluster]
 
-print START_SECTOR, MsgReservedSectors
-printWordHexLn gs, word [Fat.ReservedSectors]
+printString START_SECTOR, MsgReservedSectors
+printWordHexLn word [gs:Fat.ReservedSectors]
 
-print START_SECTOR, MsgSectorPerFat32
-printWordHexLn gs, word [Fat.SectorPerFat32]
+printString START_SECTOR, MsgSectorPerFat32
+printWordHexLn word [gs:Fat.SectorPerFat32]
 
-print START_SECTOR, MsgClusterRootDir
-printWordHexLn gs, word [Fat.ClusterRootDir]
+printString START_SECTOR, MsgClusterRootDir
+printWordHexLn word [gs:Fat.ClusterRootDir]
 
 ;Obliczenie ile sektorów dysku przypada na sektor partycji
 xor eax, eax
@@ -72,8 +71,8 @@ div ebx
 mov byte [PartMetaData.DiskSectorPerPartSector], al
 
 ;Wyświetlenie ile sektorów dysku przypada na sektor partycji
-print START_SECTOR, MsgDiskSectorPerPartSector
-printByteHexLn START_SECTOR, byte [PartMetaData.DiskSectorPerPartSector]
+printString START_SECTOR, MsgDiskSectorPerPartSector
+printByteHexLn byte [ds:PartMetaData.DiskSectorPerPartSector]
 
 ;Obliczenie w którm sektorze znajduje się Root Directory
 mov eax, dword [gs:Fat.SectorPerFat32]
@@ -90,8 +89,8 @@ add eax, dword [PartFat32StartAddress + MbrPart.FirstLbaSect]
 mov dword [PartMetaData.RootDirSector], eax
 
 ;Wyświetlenie w którm sektorze znajduje się Root Directory
-print START_SECTOR, MsgRootDirSector
-printWordHexLn START_SECTOR, word [PartMetaData.RootDirSector]
+printString START_SECTOR, MsgRootDirSector
+printWordHexLn word [ds:PartMetaData.RootDirSector]
 
 
 ;Obliczenie ile przpada sektorów dysku na cluster w partycji
@@ -109,20 +108,20 @@ div bx
 mov word [PartMetaData.ClusterSizeInSector], ax
 
 ;Wyświetlenie ile przpada sektorów dysku na cluster w partycji
-print START_SECTOR, MsgClusterSize
-printWordHexLn START_SECTOR, word [PartMetaData.ClusterSizeInSector]
+printString START_SECTOR, MsgClusterSize
+printWordHexLn word [ds:PartMetaData.ClusterSizeInSector]
 FatCheckMaxFilesInCluster
-print START_SECTOR, MsgMaxFilesInCluster
-printDWordHexLn START_SECTOR, dword [PartMetaData.MaxFilesInCluster]
+printString START_SECTOR, MsgMaxFilesInCluster
+printDWordHexLn dword [ds:PartMetaData.MaxFilesInCluster]
 
 ;Wczytanie Root Directory
-loadLBASectors FAT_SEGMENT, 0x0000, dword [PartMetaData.RootDirSector], 1
+diskLoadLBASectors FAT_SEGMENT, 0x0000, 0x00000000, dword [PartMetaData.RootDirSector], 1
 
 ;Wyświetlenie folderów w Root Directory
 newLine
-printLn START_SECTOR, MsgFoldersFilesRootDir
+printStringLn START_SECTOR, MsgFoldersFilesRootDir
 xchg bx, bx
-Fat32PrintFoldersAndFiles gs, 0x00
+; Fat32PrintFoldersAndFiles gs, 0x00
 
 newLine
 Fat32LoadFolderOrFile FAT_SEGMENT, 0x0000, FAT_SEGMENT, 0x0000, ds, NameUpperTest

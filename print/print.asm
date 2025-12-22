@@ -1,8 +1,8 @@
 [BITS 16]
 %define PRINT_IMPLEMENTATION
 
-%include "print.asmh"
-%include "../string/string.asmh"
+%include "./print/print.asmh"
+%include "./string/string.asmh"
 
 global FunPrintString
 FunPrintString:

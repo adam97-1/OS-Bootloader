@@ -1,0 +1,7 @@
+%ifndef GLOBAL_DEFINE_ASMH
+%define GLOBAL_DEFINE_ASMH
+
+%define START_SECTOR 0x50
+%define BOOT_SEGMENT_RAM 0x07C0
+
+%endif

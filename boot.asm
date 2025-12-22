@@ -1,6 +1,6 @@
 %define SIZE_SECTOR 0x200
-%define START_SECTOR 0x50
-%define BOOT_SEGMENT_RAM 0x07C0
+%include "./global_define.asmh"
+
 
 ;Ustawienie DS segmentu na początek kodu w RAM
 cli
@@ -59,19 +59,4 @@ SizeMsgErrLoadBootloader: dw $ - MsgErrLoadBootloader
 
 
 times 512-($-$$) db 0xAA
-
-LoadStage2:
-%include "macro.asm"
-%include "string.asm"
-%include "print.asm"
-%include "loadData.asm"
-%include "fat32.asm"
-
-%include "bootloader.asm"
-EndLoadStage2: db 0x00
-
-
-
-times 4096-($-$$) db 0x55
-
 

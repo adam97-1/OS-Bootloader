@@ -1,6 +1,6 @@
 [BITS 16]
 %define STRING_IMPLEMENTATION
-%include "string.asmh"
+%include "./string/string.asmh"
 
 global FunStringCmp
 FunStringCmp:

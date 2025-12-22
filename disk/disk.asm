@@ -1,7 +1,10 @@
-%include "disk.asmh"
+[BITS 16]
+%define DISK_IMPLEMENTATION
+%include "./disk/disk.asmh"
 
 ;Args: segment, offset, sector, count
-FunLoadLBASectors:
+global FunDiskLoadLBASectors
+FunDiskLoadLBASectors:
     %push
     %stacksize large
     %arg segmentDest:word, offsetDest:word, sector:qword, count:dword
@@ -65,16 +68,39 @@ FunLoadLBASectors:
 ; SizeMsgErrLoadSector: dw $ - MsgErrLoadSector
 ;
 
+global FunDiskGetDiskIntex
+FunDiskGetDiskIntex:
+    push ds
 
-struc DAP_st
-    .size resb 1
-    .null resb 1
-    .count resd 1
-    .offset resd 1
-    .segment resd 1
-    .address resq 1
-    .structSize resb 0
+    mov ax, START_SEGMENT
+    mov ds, ax
 
-endstruc
+    mov al, DiskIntex
+
+    pop ds
+    ret
+
+global FunDiskSetDiskIntex
+FunDiskSetDiskIntex:
+    %push
+    %stacksize large
+    %arg diskIndexArg:byte
+
+    push bp
+    mov bp, sp
+
+    push ds
+    push ax
+
+    mov ax, START_SEGMENT
+    mov ds, ax
+
+    move al, byte [diskIndexArg]
+    mov byte [DiskIntex], al
+
+    pop ax
+    pop ds
+    leave
+    ret
 
 DiskIntex: db 0x00

@@ -1,42 +1,50 @@
-;Args: segmentDest, offsetDest, sector, count
-%macro diskLoadLBASectors 4
-    push ax
-    sar rax, 16
-    push ax
-    sar, rax, 16
-    push ax
-    sar rax, 16
-    push ax
-    sar, rax, 16
-    push ax
+%ifndef DISK_ASMH
+%define DISK_ASMH
+
+%ifndef DISK_IMPLEMENTATION
+extern FunDiskLoadLBASectors
+extern FunDiskGetDiskIntex
+extern FunDiskSetDiskIntex
+%endif
+
+;Args: segmentDest, offsetDest, sectorHi, sectorLo, count
+%macro diskLoadLBASectors 5
+
 
     push %1
     push %2
+    push %4
+    push %3
+    push %5
 
-    mov rax, %3
-    push ax
-    sar rax, 16
-    push ax
-    sar, rax, 16
-    push ax
-    sar rax, 16
-    push ax
+    call FunLoadLBASectors
 
+    add sp, 14
 
-    mov eax, %4
-    push ax
-    sar eax, 16
-    push ax
-
-    call FunDiskLoadLBASectors
-
-    add sp, 16
-
-    pop ax
-    sal rax, 16
-    pop ax
-    sal, rax, 16
-    pop ax
-    sal rax, 16
-    pop ax
 %endmacro
+
+%macro DiskGetDiskIntex 0
+    call FunDiskGetDiskIntex
+%endmacro
+
+%macro DiskSetDiskIntex 1
+    push %1
+
+    call FunDiskSetDiskIntex
+
+    add sp, 2
+%endmacro
+
+
+struc DAP_st
+    .size resb 1
+    .null resb 1
+    .count resd 1
+    .offset resd 1
+    .segment resd 1
+    .address resq 1
+    .structSize resb 0
+
+endstruc
+
+%endif

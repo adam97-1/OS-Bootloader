@@ -1,13 +1,12 @@
 %ifndef PRINT_ASMH
 %define PRINT_ASMH
 
-%include "../macro.asmh"
 
 %ifndef PRINT_IMPLEMENTATION
 extern FunPrintString
 extern FunPrintByteHex
 extern FunPrintWordHex
-extern FunPrintWordHex
+extern FunPrintDWordHex
 extern FunPrintChar
 %endif
 
@@ -41,9 +40,9 @@ extern FunPrintChar
 
 %macro printDWordHex 1
 
-    pushdw %1
+    push %1
 
-    call FunPrintWordHex
+    call FunPrintDWordHex
 
     add sp, 4
 %endmacro
@@ -67,18 +66,18 @@ extern FunPrintChar
     newLine
 %endmacro
 
-%macro printByteHexLn 2
-    printByteHex %1 ,%2
+%macro printByteHexLn 1
+    printByteHex %1
     newLine
 %endmacro
 
-%macro printWordHexLn 2
-    printWordHex %1, %2
+%macro printWordHexLn 1
+    printWordHex %1
     newLine
 %endmacro
 
-%macro printDWordHexLn 2
-    printDWordHex %1, %2
+%macro printDWordHexLn 1
+    printDWordHex %1
     newLine
 %endmacro
 

@@ -1,88 +1,25 @@
 %ifndef MACRO_ASMH
 %define MACRO_ASMH
 
-%define pushwd 1
-    push ax
-    shr eax, 8
-    push ax
-
-    mov eax, %1
-	push ax
-    shr eax, 8
-    push ax
-
-	pop ax
-    shl eax, 8
-    pop ax
-%endmacro
-
-%define popwd 1
-    push ax
-    shr eax, 8
-    push ax
-
-	pop ax
-    shr eax, 8
-    pop ax
-    mov %1, eax
-
-	pop ax
-    shl eax, 8
-    pop ax
-%endmacro
-
-%define pushqd 1
-    push ax
-    shr rax, 8
-    push ax
-	shr rax, 8
-    push ax
-	shr rax, 8
-    push ax
+%macro pushqw 1
+    sub sp, 8
+    push eax
+    add sp, 12
 
     mov rax, %1
-    push ax
-    shr rax, 8
-    push ax
-	shr rax, 8
-    push ax
-	shr rax, 8
-    push ax
 
-	pop ax
-    shl rax, 8
-    pop ax
-	shl rax, 8
-    pop ax
-	shl rax, 8
-    pop ax
+    push eax
+    shr rax, 16
+    push eax
+
+    sub sp,  4
+	pop eax
 %endmacro
 
-%define popwd 1
-    push ax
-    shr rax, 8
-    push ax
-	shr rax, 8
-    push ax
-	shr rax, 8
-    push ax
-
-	pop ax
-    shl rax, 8
-    pop ax
-	shl rax, 8
-    pop ax
-	shl rax, 8
-    pop ax
-    mov %1, rax
-
-	pop ax
-    shl rax, 8
-    pop ax
-	shl rax, 8
-    pop ax
-	shl rax, 8
-    pop ax
+%macro popqw 1
+	pop %1
+    shl %1, 16
+    pop %1
 %endmacro
 
 %endif
