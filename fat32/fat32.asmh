@@ -6,8 +6,11 @@ extern FunFat32FindMBR
 extern FunFat32GetDirOrFileName
 extern FunFat32PopFolderFromPath
 extern FunFat32PrintFoldersAndFiles
-extern FatCheckMaxFilesInCluster
+extern Fun32FatCheckMaxFilesInCluster
 extern FunFat32LoadFolderOrFile
+
+extern Fat32PartStartAddress
+extern Fat32PartMetaDataAddress
 %endif
 
 ;Args: startAddressMBR
@@ -56,9 +59,9 @@ extern FunFat32LoadFolderOrFile
     add, sp, 4
 %endmacro
 
-%macro FatCheckMaxFilesInCluster 0
+%macro Fat32CheckMaxFilesInCluster 0
 
-    call FunFatCheckMaxFilesInCluster
+    call Fun32FatCheckMaxFilesInCluster
 
 %endmacro
 
@@ -141,5 +144,14 @@ struc FileFat
     .FirstClusterLo resb 2
     .FileSize resb 4
 endstruc
+
+struc Fat32PartMetaData
+    .RootDirSector resd 1
+    .DiskSectorPerPartSector resb 1
+    .ClusterSizeInSector resw 1
+    .CurrentDirCluster resd 1
+    .MaxFilesInCluster resw 1
+endstruc
+
 
 %endif

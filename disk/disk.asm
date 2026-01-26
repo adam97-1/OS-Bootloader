@@ -1,6 +1,8 @@
 [BITS 16]
+[CPU 386]
 %define DISK_IMPLEMENTATION
 %include "./disk/disk.asmh"
+%include "global_define.asmh"
 
 ;Args: segment, offset, sector, count
 global FunDiskLoadLBASectors
@@ -38,7 +40,7 @@ FunDiskLoadLBASectors:
     mov ax, 0x50
     mov ds, ax
     ;Indeks dsku z którego wczytujemy dane
-    mov dl, DiskIntex
+    mov dl, byte [DiskIntex]
     mov ah, 0x42
 
 
@@ -68,39 +70,6 @@ FunDiskLoadLBASectors:
 ; SizeMsgErrLoadSector: dw $ - MsgErrLoadSector
 ;
 
-global FunDiskGetDiskIntex
-FunDiskGetDiskIntex:
-    push ds
-
-    mov ax, START_SEGMENT
-    mov ds, ax
-
-    mov al, DiskIntex
-
-    pop ds
-    ret
-
-global FunDiskSetDiskIntex
-FunDiskSetDiskIntex:
-    %push
-    %stacksize large
-    %arg diskIndexArg:byte
-
-    push bp
-    mov bp, sp
-
-    push ds
-    push ax
-
-    mov ax, START_SEGMENT
-    mov ds, ax
-
-    move al, byte [diskIndexArg]
-    mov byte [DiskIntex], al
-
-    pop ax
-    pop ds
-    leave
-    ret
-
+section .text
+global DiskIntex
 DiskIntex: db 0x00

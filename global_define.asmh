@@ -1,7 +1,11 @@
 %ifndef GLOBAL_DEFINE_ASMH
 %define GLOBAL_DEFINE_ASMH
 
-%define START_SECTOR 0x50
+%define SIZE_SECTOR 0x200
+%define START_SEGMENT 0x50
 %define BOOT_SEGMENT_RAM 0x07C0
+%define FAT_SEGMENT 0x01000
+
+%define SizeDiskSector 0x20
 
 %endif

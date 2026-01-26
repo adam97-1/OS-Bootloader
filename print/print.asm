@@ -1,4 +1,5 @@
 [BITS 16]
+[CPU 386]
 %define PRINT_IMPLEMENTATION
 
 %include "./print/print.asmh"

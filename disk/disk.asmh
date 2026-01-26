@@ -3,8 +3,7 @@
 
 %ifndef DISK_IMPLEMENTATION
 extern FunDiskLoadLBASectors
-extern FunDiskGetDiskIntex
-extern FunDiskSetDiskIntex
+extern DiskIntex
 %endif
 
 ;Args: segmentDest, offsetDest, sectorHi, sectorLo, count
@@ -17,24 +16,11 @@ extern FunDiskSetDiskIntex
     push %3
     push %5
 
-    call FunLoadLBASectors
+    call FunDiskLoadLBASectors
 
     add sp, 14
 
 %endmacro
-
-%macro DiskGetDiskIntex 0
-    call FunDiskGetDiskIntex
-%endmacro
-
-%macro DiskSetDiskIntex 1
-    push %1
-
-    call FunDiskSetDiskIntex
-
-    add sp, 2
-%endmacro
-
 
 struc DAP_st
     .size resb 1

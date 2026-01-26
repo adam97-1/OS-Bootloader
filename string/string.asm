@@ -1,4 +1,5 @@
 [BITS 16]
+[CPU 386]
 %define STRING_IMPLEMENTATION
 %include "./string/string.asmh"
 

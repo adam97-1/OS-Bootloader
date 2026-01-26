@@ -1,6 +1,6 @@
-%define SIZE_SECTOR 0x200
+[BITS 16]
+[CPU 386]
 %include "./global_define.asmh"
-
 
 ;Ustawienie DS segmentu na początek kodu w RAM
 cli
@@ -30,15 +30,15 @@ mov cl, 0x01                    ;Sektor z którego wczytujemy dame
 mov dh, 0x00                    ;Indeks głowicy z którego wczytujemy dane
 mov dl, byte [DiskIndexBoot]    ;Indeks dsku z którego wczytujemy dane
 mov bx, 0x00                    ;Offset pod który wczytujemy dane
-push START_SECTOR          ;Segment pod który wcztujemy dane
+push START_SEGMENT          ;Segment pod który wcztujemy dane
 pop es
 int 13h
 
     jc PrintErrLoadBootloader
-push START_SECTOR
+push START_SEGMENT
 pop ds
 mov dl, byte [DiskIndexBoot]
-jmp START_SECTOR:Bootloader
+jmp START_SEGMENT:Bootloader
 
 PrintErrLoadBootloader:
 ;Wyświetlenie komunikatu o błędzie wczytania danych z dysku

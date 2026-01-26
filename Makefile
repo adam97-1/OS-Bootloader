@@ -12,12 +12,13 @@ OBJS := $(FILES:.asm=.o)
 	nasm -f elf $< -o $@
 
 OS-bootloader: $(OBJS)
-	ld -o OS-bootloader $<
+	i386-elf-ld -m elf_i386 -T ./bootloader.ld  -o OS-bootloader $(OBJS)
 
 boot.bin: boot.asm
-	ld -o boot.bin boot.asm
+	nasm -f bin -o boot.bin boot.asm
+	nasm -f bin -o kern.ab kerb.asm
 
-part.img: kern.bin boot.bin OS-bootloader
+part.img: kern.ab boot.bin OS-bootloader
 	dd if=/dev/zero of=part.img bs=1M count=86
 	mkfs.fat -F32 -n "OS" part.img
 	mmd -i part.img OS
@@ -32,7 +33,7 @@ disk.img: part.img
 	dd if=OS-bootloader of=disk.img conv=notrunc iseek=1 oseek=1
 	dd if=part.img of=disk.img bs=512 seek=2048 conv=notrunc
 
-run: clean OS-bootloader disk.img
+run: clean boot.bin OS-bootloader disk.img
 	bochs -f bochs.conf -q
 
 debug: clean disk.img

@@ -1,4 +1,5 @@
 [BITS 16]
+[CPU 386]
 %define FAT32_IMPLEMENTATION
 %include "./global_define.asmh"
 %include "./fat32/fat32.asmh"
@@ -168,19 +169,19 @@ FunFat32PrintFoldersAndFiles:
 	%pop
 
 
-global FunFatCheckMaxFilesInCluster
-FunFatCheckMaxFilesInCluster:
+global Fun32FatCheckMaxFilesInCluster
+Fun32FatCheckMaxFilesInCluster:
 
     pusha
 
     xor eax, eax
     xor edx, edx
     xor ebx, ebx
-    mov ax, word [ds:PartMetaData.ClusterSizeInSector]
-    mov bl, byte [ds:PartMetaData.DiskSectorPerPartSector]
+    mov ax, word [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.ClusterSizeInSector]
+    mov bl, byte [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.DiskSectorPerPartSector]
     mul ebx
     shl eax, 4
-    mov word [ds:PartMetaData.MaxFilesInCluster], ax
+    mov word [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.MaxFilesInCluster], ax
 
     popa
     ret
@@ -213,9 +214,9 @@ FunFat32LoadFolderOrFile:
      je .NoFoundFolderOrFile
     .loop:
     pop ds
-    push START_SECTOR
+    push START_SEGMENT
     pop ds
-    cmp ecx, dword [ds:PartMetaData.MaxFilesInCluster]
+    cmp ecx, dword [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.MaxFilesInCluster]
     pop ds
         je .NoFilesInThisCluster
     mov di, bp
@@ -252,7 +253,7 @@ FunFat32LoadFolderOrFile:
         ;Sprawdzic czy jest nstępny klaster.
         ;Jeżeli jest należy go wczytać i kontynułować sprawdzenie.
         ;W przeciwnym wypadku wyjść z funckji z błędem.
-        printStringLn START_SECTOR, .MsgNoFileInThisCluster
+        printStringLn START_SEGMENT, .MsgNoFileInThisCluster
         jmp .back
 
     .MsgNoFileInThisCluster: db "No file in this cluster.", 0x00
@@ -320,13 +321,9 @@ FunFat32GetDirOrFileName:
 	ret
 
 
-PartMetaData:
-    .RootDirSector: dd 0x00000000
-    .DiskSectorPerPartSector: db 0x00
-    .ClusterSizeInSector: dw 0x0000
-    .CurrentDirCluster: dd 0x00000000
-    .MaxFilesInCluster: dw 0x00000000
+global Fat32PartMetaDataAddress
+Fat32PartMetaDataAddress: times 13  db 0x00
 
-
-PartFat32StartAddress: times 16  db 0x00
+global Fat32PartStartAddress
+Fat32PartStartAddress: times 16  db 0x00
 
