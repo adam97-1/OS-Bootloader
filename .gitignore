@@ -1,3 +1,6 @@
 **/*.bin
 **/*.img
 **/*.o
+**/*.ab
+tmp
+OS-bootloader

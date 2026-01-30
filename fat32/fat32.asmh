@@ -15,8 +15,8 @@ extern Fat32PartMetaDataAddress
 
 ;Args: startAddressMBR
 %macro Fat32FindMBR 2
-    push %1
     push %2
+    push %1
 
     call FunFat32FindMBR
 
@@ -25,10 +25,10 @@ extern Fat32PartMetaDataAddress
 
 ;Args: DestSegment. DestOffset, DirStructSegment, DirStructOffset
 %macro Fat32GetDirOrFileName 4
-    push %1
-    push %2
-    push %3
     push %4
+    push %3
+    push %2
+    push %1
 
     call FunFat32GetDirOrFileName
 
@@ -39,10 +39,10 @@ extern Fat32PartMetaDataAddress
 ; Fat32PopFolderFromPath es, sdsad. ds, asdas
 ;Args: SrcSeg, SrcString, DestSegment, DestString
 %macro Fat32PopFolderFromPath 4
-    push %1
-    push %2
-    push %3
     push %4
+    push %3
+    push %2
+    push %1
 
     call FunFat32PopFolderFromPath
 
@@ -51,8 +51,8 @@ extern Fat32PartMetaDataAddress
 %endmacro
 
 %macro Fat32PrintFoldersAndFiles 2
-    push %1
     push %2
+    push %1
 
     call FunFat32PrintFoldersAndFiles
 
@@ -68,12 +68,12 @@ extern Fat32PartMetaDataAddress
 ;Args: DestSegment, DestOffset, FolderSegment, FolderOffset, PathSegment, PathOffset
 %macro Fat32LoadFolderOrFile 6
 
-    push %1
-    push %2
-    push %3
-    push %4
-    push %5
     push %6
+    push %5
+    push %4
+    push %3
+    push %2
+    push %1
 
     call FunFat32LoadFolderOrFile
 

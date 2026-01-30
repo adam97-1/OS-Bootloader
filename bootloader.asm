@@ -7,6 +7,7 @@
 %include "./string/string.asmh"
 %include "./disk/disk.asmh"
 
+section .code
 global start
 start:
 ;Kimunikat o wczytaniu bootloadera do RAM
@@ -17,8 +18,7 @@ mov byte [DiskIntex], dl
 pop ds
 printStringLn START_SEGMENT, MsgLoadBootloader
 
-
-Fat32FindMBR ds, Mbr
+Fat32FindMBR BOOT_SEGMENT_RAM, Mbr
 cmp ax, 0x00
     je PrintErrFindFAT32
 jmp LoadPartiction
@@ -36,13 +36,22 @@ printStringLn START_SEGMENT, MsgLoadPart
 ;Kopia danych o partycji FAT32
 cld
 mov cx, 16
-push ds
+push BOOT_SEGMENT_RAM
+pop ds
+push START_SEGMENT
 pop es
 mov si, ax
 mov di, Fat32PartStartAddress
 rep movsb
+push START_SEGMENT
+pop ds
+push BOOT_SEGMENT_RAM
+pop es
+
 ;Wczytanie pierwszego sektora partcji FAT32
-diskLoadLBASectors FAT_SEGMENT, 0x0000, dword [Fat32PartStartAddress + MbrPart.FirstLbaSect], dword [Fat32PartStartAddress + MbrPart.FirstLbaSect+4], 1
+diskLoadLBASectors FAT_SEGMENT, 0x0000, dword 0x0000, dword [Fat32PartStartAddress + MbrPart.FirstLbaSect], 0x0001
+cmp ah, 0x00
+    jne .PrintErrBootSector
 
 ;Przypiasnie segmetu GS do danych w partychi FAT32
 push FAT_SEGMENT
@@ -127,14 +136,24 @@ diskLoadLBASectors FAT_SEGMENT, 0x0000, 0x00000000, dword [Fat32PartMetaDataAddr
 ;Wyświetlenie folderów w Root Directory
 newLine
 printStringLn START_SEGMENT, MsgFoldersFilesRootDir
-xchg bx, bx
 ; Fat32PrintFoldersAndFiles gs, 0x00
 
 newLine
 Fat32LoadFolderOrFile FAT_SEGMENT, 0x0000, FAT_SEGMENT, 0x0000, ds, NameUpperTest
 jmp $
 
-section .text
+.PrintErrBootSector:
+; Wyświetlenie komunikatu o błędzie wczytania danych z dysku
+printString START_SEGMENT, MsgErrLoadSector
+;Wyświetlenie kodu błedu
+mov al, ah
+xor ah, ah
+printByteHexLn ax
+
+jmp $
+
+MsgErrLoadSector: db "Load Sector Error: ", 0x00
+
 FolderNameTest: db " "
 NameUpperTest: db "os/boot/kenr.ab", 0x00
 

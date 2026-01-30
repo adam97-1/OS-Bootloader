@@ -1,6 +1,7 @@
 [BITS 16]
 [CPU 386]
 %define DISK_IMPLEMENTATION
+%include "./print/print.asmh"
 %include "./disk/disk.asmh"
 %include "global_define.asmh"
 
@@ -10,37 +11,42 @@ FunDiskLoadLBASectors:
     %push
     %stacksize large
     %arg segmentDest:word, offsetDest:word, sector:qword, count:dword
-    %define DAP 1
 
     push bp
     mov bp, sp
-    sub sp, ss:DAP_st.structSize
+    sub sp, DAP_st.structSize
 
-    pusha
+    push ebx
+    push dx
     push ds
 
-    mov ebx, dword [sector]
-    mov dword [ss:bp + DAP + DAP_st.address], ebx
-    mov ebx, dword [sector+4]
-    mov dword [ss:bp + DAP + DAP_st.address+4], ebx
+    mov bl, 0x10
+    mov byte [ss:bp - DAP_st.structSize + DAP_st.size], bl
 
-    mov bx, [count]
-    mov word [ss:bp + DAP + DAP_st.count], bx
+    mov bl, 0x00
+    mov byte [ss:bp - DAP_st.structSize + DAP_st.null], bl
+
+    mov bx, word [count]
+    mov word [ss:bp- DAP_st.structSize + DAP_st.count], bx
 
     mov bx, [offsetDest]
-    mov word [ss:bp + DAP + DAP_st.offset], bx
+    mov word [ss:bp - DAP_st.structSize + DAP_st.buffer], bx
 
     mov bx, [segmentDest]
-    mov word [ss:bp + DAP + DAP_st.segment], bx
+    mov word [ss:bp - DAP_st.structSize + DAP_st.buffer + 2], bx
 
-
+    mov ebx, dword [sector + 4]
+    mov dword [ss:bp - DAP_st.structSize + DAP_st.address], ebx
+    mov ebx, dword [sector]
+    mov dword [ss:bp - DAP_st.structSize + DAP_st.address + 4], ebx
 
     ;Polecenie wczytania sektorów (LBA)
+        xchg bx, bx
 
-    mov ax, 0x50
+    mov ax, START_SEGMENT
     mov ds, ax
     ;Indeks dsku z którego wczytujemy dane
-    mov dl, byte [DiskIntex]
+    mov dl, 0x80
     mov ah, 0x42
 
 
@@ -49,27 +55,17 @@ FunDiskLoadLBASectors:
     pop ds
 
     mov si, bp
-    add si, DAP
+    sub si, DAP_st.structSize
+    xchg bx, bx
     int 0x13
-        ; jc PrintErrBootSector
-    .back:
     pop ds
-    popa
+    pop ebx
+    pop dx
+    add sp, DAP_st.structSize
     leave
     ret
     %pop
 
-; PrintErrBootSector:
-;Wyświetlenie komunikatu o błędzie wczytania danych z dysku
-; print MsgErrLoadSector, word [SizeMsgErrLoadSector]
-; ;Wyświetlenie kodu błedu
-; printByteHex ds, ah
-; jmp .back
 
-; MsgErrLoadSector: db "Load Sector Error: "
-; SizeMsgErrLoadSector: dw $ - MsgErrLoadSector
-;
-
-section .text
 global DiskIntex
 DiskIntex: db 0x00

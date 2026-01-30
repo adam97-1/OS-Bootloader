@@ -12,8 +12,8 @@ mov byte [DiskIndexBoot], dl
 
 ;Obliczanie długości bootloadera w sektorach AL=SectorPerBootlader
 xor dx, dx
-mov ax, EndLoadStage2
-sub ax, LoadStage2
+xor cx, cx
+mov ax, word [444]
 mov bx, SIZE_SECTOR
 div bx
 cmp dx, 0x00
@@ -24,21 +24,20 @@ add al, cl
 
 ; Wczytanie programu do RAM pod adres 0x0500
 mov ah, 0x02                    ;Polecenie wczytania sektorów (CHS)
-inc al                          ;Wczytane obliczonej ilości sektorów oraz pierwszego sektora
 mov ch, 0x00                    ;Cylinder z którego wycztujemy dane
-mov cl, 0x01                    ;Sektor z którego wczytujemy dame
+mov cl, 0x02                    ;Sektor z którego wczytujemy dame
 mov dh, 0x00                    ;Indeks głowicy z którego wczytujemy dane
 mov dl, byte [DiskIndexBoot]    ;Indeks dsku z którego wczytujemy dane
 mov bx, 0x00                    ;Offset pod który wczytujemy dane
-push START_SEGMENT          ;Segment pod który wcztujemy dane
+push START_SEGMENT              ;Segment pod który wcztujemy dane
 pop es
 int 13h
-
     jc PrintErrLoadBootloader
 push START_SEGMENT
 pop ds
 mov dl, byte [DiskIndexBoot]
-jmp START_SEGMENT:Bootloader
+
+jmp START_SEGMENT:0x00
 
 PrintErrLoadBootloader:
 ;Wyświetlenie komunikatu o błędzie wczytania danych z dysku
@@ -55,8 +54,6 @@ jmp $
 DiskIndexBoot: db 0x00
 MsgErrLoadBootloader: db "Load bootloader error"
 SizeMsgErrLoadBootloader: dw $ - MsgErrLoadBootloader
-
-
 
 times 512-($-$$) db 0xAA
 

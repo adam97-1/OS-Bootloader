@@ -23,6 +23,10 @@ FunPrintString:
 	cmp cx, 0x00
 		je .break
 	mov ah, 0x0E
+	push word [segString]
+	pop ds
+	mov si, word [offsetString]
+	cld
 	.loop:
 		lodsb
 		int 0x10
@@ -40,6 +44,9 @@ FunPrintChar:
 	%stacksize large
 	%arg char:byte
 
+	push    bp
+    mov     bp, sp
+
 	push ax
 
 	mov ah, 0x0E
@@ -52,6 +59,7 @@ FunPrintChar:
 	%pop
 
 _FunPrintHexFromBcd:
+	mov ah, 0x0E
 	cmp al, 0x0A
 	jae .l
 	add al, '0'
@@ -76,14 +84,17 @@ global FunPrintByteHex
 FunPrintByteHex:
 	%push
 	%stacksize large
-	%arg num:byte
+	%arg num:word
+
+	push    bp
+    mov     bp, sp
 
 	pusha
 
 	printChar '0'
 	printChar 'x'
 
-	mov al, byte [num]
+	mov cx, word [num]
 	call _FunPrintByteHex
 
 	popa
@@ -105,6 +116,9 @@ FunPrintWordHex:
 	%stacksize large
 	%arg num:word
 
+	push    bp
+    mov     bp, sp
+
 	pusha
 
 	printChar '0'
@@ -123,6 +137,9 @@ FunPrintDWordHex:
 	%push
 	%stacksize large
 	%arg num:dword
+
+	push    bp
+    mov     bp, sp
 
 	pusha
 	printChar '0'

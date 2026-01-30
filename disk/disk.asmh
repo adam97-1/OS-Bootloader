@@ -8,13 +8,11 @@ extern DiskIntex
 
 ;Args: segmentDest, offsetDest, sectorHi, sectorLo, count
 %macro diskLoadLBASectors 5
-
-
-    push %1
-    push %2
+    push %5
     push %4
     push %3
-    push %5
+    push %2
+    push %1
 
     call FunDiskLoadLBASectors
 
@@ -23,14 +21,13 @@ extern DiskIntex
 %endmacro
 
 struc DAP_st
-    .size resb 1
-    .null resb 1
-    .count resd 1
-    .offset resd 1
-    .segment resd 1
-    .address resq 1
+    .size     resb 1
+    .null     resb 1
+    .count    resw 1
+    .buffer   resd 1    ; offset:segment
+    .address  resq 1
     .structSize resb 0
-
 endstruc
+
 
 %endif

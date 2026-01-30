@@ -9,10 +9,10 @@ extern FunStringtoUpper
 
 ;Args: segString, offsetString, segString2, offsetString2
 %macro stringCmp 4
-    push %1
-    push %2
-    push %3
     push %4
+    push %3
+    push %2
+    push %1
 
     call FunStringCmp
 
@@ -21,8 +21,8 @@ extern FunStringtoUpper
 
 ;Args: segString, offsetString
 %macro stringLen 2
-    push %1
     push %2
+    push %1
 
     call FunStringLen
 
