@@ -19,7 +19,7 @@ boot.bin: boot.asm
 	nasm -f bin -o boot.bin boot.asm
 	nasm -f bin -o kern.ab kern.asm
 
-part.img: kern.ab boot.bin OS-bootloader
+part.img: boot.bin OS-bootloader
 	dd if=/dev/zero of=part.img bs=1M count=86
 	mkfs.fat -F32 -n "OS" part.img
 	mmd -i part.img OS
@@ -31,8 +31,9 @@ disk.img: part.img
 	parted disk.img -s mklabel msdos
 	parted disk.img -s mkpart primary fat32 2048s 67583s
 	dd if=boot.bin of=disk.img conv=notrunc bs=1 count=444
-	dd of=disk.img bs=1 seek=444 conv=notrunc << tmp
-	dd if=tmp of=disk.img conv=notrunc bs=1 count=2 oseek=444
+	@size=$$(stat -c%s OS-bootloader.bin); \
+	printf '%04x' $$size | sed 's/\(..\)\(..\)/\2\1/' | \
+	xxd -r -p | dd of=disk.img bs=1 count=2 seek=444 conv=notrunc status=none
 	dd if=OS-bootloader.bin of=disk.img conv=notrunc oseek=1
 	dd if=part.img of=disk.img bs=512 seek=2048 conv=notrunc
 
@@ -46,3 +47,5 @@ clean:
 	rm -rf *.bin
 	rm -rf *.img
 	rm -rf $(OBJS)
+	rm -rf OS-bootloader
+	rm -rf *.ab

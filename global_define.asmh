@@ -6,6 +6,6 @@
 %define BOOT_SEGMENT_RAM 0x07C0
 %define FAT_SEGMENT 0x01000
 
-%define SizeDiskSector 0x20
+%define SizeDiskSector 0x200
 
 %endif

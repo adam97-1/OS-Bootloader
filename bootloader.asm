@@ -10,15 +10,13 @@
 section .code
 global start
 start:
-;Kimunikat o wczytaniu bootloadera do RAM
-push ds
-push START_SEGMENT
-pop ds
-mov byte [DiskIntex], dl
-pop ds
+;Komunikat o wczytaniu bootloadera do RAM
 printStringLn START_SEGMENT, MsgLoadBootloader
 
-Fat32FindMBR BOOT_SEGMENT_RAM, Mbr
+mov byte [DiskIntex], dl
+
+;Szuka partycji FAR32 w MBR
+DiskFindMBR BOOT_SEGMENT_RAM, Mbr
 cmp ax, 0x00
     je PrintErrFindFAT32
 jmp LoadPartiction
@@ -52,10 +50,21 @@ pop es
 diskLoadLBASectors FAT_SEGMENT, 0x0000, dword 0x0000, dword [Fat32PartStartAddress + MbrPart.FirstLbaSect], 0x0001
 cmp ah, 0x00
     jne .PrintErrBootSector
+jmp .AnalysisPartition
 
+.PrintErrBootSector:
+; Wyświetlenie komunikatu o błędzie wczytania danych z dysku
+printString START_SEGMENT, MsgErrLoadSector
+;Wyświetlenie kodu błedu
+mov al, ah
+xor ah, ah
+printByteHexLn ax
+jmp $
+
+.AnalysisPartition:
 ;Przypiasnie segmetu GS do danych w partychi FAT32
-push FAT_SEGMENT
-pop gs
+mov ax, FAT_SEGMENT
+mov gs, ax
 
 ;Wyświetlenie inforamcji pomocniczych
 newLine
@@ -106,7 +115,7 @@ mov dword [Fat32PartMetaDataAddress + Fat32PartMetaData.RootDirSector], eax
 
 ;Wyświetlenie w którm sektorze znajduje się Root Directory
 printString START_SEGMENT, MsgRootDirSector
-printWordHexLn word [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.RootDirSector]
+printDWordHexLn dword [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.RootDirSector]
 
 
 ;Obliczenie ile przpada sektorów dysku na cluster w partycji
@@ -128,29 +137,23 @@ printString START_SEGMENT, MsgClusterSize
 printWordHexLn word [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.ClusterSizeInSector]
 Fat32CheckMaxFilesInCluster
 printString START_SEGMENT, MsgMaxFilesInCluster
-printDWordHexLn dword [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.MaxFilesInCluster]
+printWordHexLn dword [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.MaxFilesInCluster]
 
 ;Wczytanie Root Directory
-diskLoadLBASectors FAT_SEGMENT, 0x0000, 0x00000000, dword [Fat32PartMetaDataAddress + Fat32PartMetaData.RootDirSector], 1
+diskLoadLBASectors FAT_SEGMENT, 0x0000, dword 0x00000000, dword [Fat32PartMetaDataAddress + Fat32PartMetaData.RootDirSector], 1
+cmp ah, 0x00
+    jne .PrintErrBootSector
 
 ;Wyświetlenie folderów w Root Directory
 newLine
 printStringLn START_SEGMENT, MsgFoldersFilesRootDir
-; Fat32PrintFoldersAndFiles gs, 0x00
+
+Fat32PrintFoldersAndFiles gs, 0x00
 
 newLine
 Fat32LoadFolderOrFile FAT_SEGMENT, 0x0000, FAT_SEGMENT, 0x0000, ds, NameUpperTest
 jmp $
 
-.PrintErrBootSector:
-; Wyświetlenie komunikatu o błędzie wczytania danych z dysku
-printString START_SEGMENT, MsgErrLoadSector
-;Wyświetlenie kodu błedu
-mov al, ah
-xor ah, ah
-printByteHexLn ax
-
-jmp $
 
 MsgErrLoadSector: db "Load Sector Error: ", 0x00
 

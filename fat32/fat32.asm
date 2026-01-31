@@ -6,59 +6,11 @@
 %include "./print/print.asmh"
 %include "./string/string.asmh"
 
-%define FAT32 0x0B
-%define FAT32LBA 0x0C
-%define HIDFAT32 0x1B
-%define HIDFAT32LBA 0x1C
-
 %define NoFileInFat 0xE5
 %define EndFileInFat 0x00
 
 %define ASCII_SPACE 0x20
 
-
-
-global FunFat32FindMBR
-FunFat32FindMBR:
-    %push
-	%stacksize large
-	%arg segAddress:word, offsetAddress:word
-
-    push    bp
-    mov     bp, sp
-
-	push bx
-    push ds
-
-	mov ds, word [segAddress]
-	mov bx, word [offsetAddress]
-
-    lea bx, [bx + Mbr.Part1]
-    mov ax, bx
-    add ax, 0x40
-    .loop:
-    cmp byte [bx + MbrPart.PartType], FAT32
-        je .FoundFAT32
-    cmp byte [bx + MbrPart.PartType], FAT32LBA
-        je .FoundFAT32
-    cmp byte [bx + MbrPart.PartType], HIDFAT32
-        je .FoundFAT32
-    cmp byte [bx + MbrPart.PartType], HIDFAT32LBA
-        je .FoundFAT32
-    add bx, 0x10
-    cmp bx, ax
-        je .NotFoundFAT32
-    jmp .loop
-    .NotFoundFAT32:
-    xor bx, bx
-    .FoundFAT32:
-    mov ax, bx
-
-    pop ds
-    pop bx
-	leave
-	ret
-	%pop
 
 
 global FunFat32PopFolderFromPath
@@ -132,7 +84,7 @@ FunFat32PrintFoldersAndFiles:
     %push
 	%stacksize large
 	%arg segAddress:word, offsetAddress:word
-	%define tempStringOffset 1
+	%define tempStringOffset 12
 
     push    bp
     mov     bp, sp
@@ -155,8 +107,9 @@ FunFat32PrintFoldersAndFiles:
     cmp byte [ds:si], NoFileInFat
         je .loop
     mov bx, bp
-    add bx, tempStringOffset
-    Fat32GetDirOrFileName ss, bx, ds, si
+    sub bx, tempStringOffset
+    xchg bx, bx
+    Fat32GetDirOrFileName ds, si, ss, bx
     printStringLn ss, bx
     jmp .loop
     .break:
@@ -173,6 +126,7 @@ global Fun32FatCheckMaxFilesInCluster
 Fun32FatCheckMaxFilesInCluster:
 
     pusha
+        xchg bx, bx
 
     xor eax, eax
     xor edx, edx
@@ -322,7 +276,7 @@ FunFat32GetDirOrFileName:
 
 
 global Fat32PartMetaDataAddress
-Fat32PartMetaDataAddress: times 13  db 0x00
+Fat32PartMetaDataAddress: times Fat32PartMetaData.StructSize  db 0x00
 
 global Fat32PartStartAddress
 Fat32PartStartAddress: times 16  db 0x00

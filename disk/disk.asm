@@ -5,6 +5,11 @@
 %include "./disk/disk.asmh"
 %include "global_define.asmh"
 
+%define FAT32 0x0B
+%define FAT32LBA 0x0C
+%define HIDFAT32 0x1B
+%define HIDFAT32LBA 0x1C
+
 ;Args: segment, offset, sector, count
 global FunDiskLoadLBASectors
 FunDiskLoadLBASectors:
@@ -41,12 +46,10 @@ FunDiskLoadLBASectors:
     mov dword [ss:bp - DAP_st.structSize + DAP_st.address + 4], ebx
 
     ;Polecenie wczytania sektorów (LBA)
-        xchg bx, bx
-
     mov ax, START_SEGMENT
     mov ds, ax
     ;Indeks dsku z którego wczytujemy dane
-    mov dl, 0x80
+    mov dl, byte [DiskIntex]
     mov ah, 0x42
 
 
@@ -56,7 +59,6 @@ FunDiskLoadLBASectors:
 
     mov si, bp
     sub si, DAP_st.structSize
-    xchg bx, bx
     int 0x13
     pop ds
     pop ebx
@@ -65,6 +67,49 @@ FunDiskLoadLBASectors:
     leave
     ret
     %pop
+
+global FunDiskFindMBR
+FunDiskFindMBR:
+    %push
+	%stacksize large
+	%arg segAddress:word, offsetAddress:word
+
+    push    bp
+    mov     bp, sp
+
+	push bx
+    push ds
+
+	mov ds, word [segAddress]
+	mov bx, word [offsetAddress]
+
+    lea bx, [bx + Mbr.Part1]
+    mov ax, bx
+    add ax, 0x40
+    .loop:
+    cmp byte [bx + MbrPart.PartType], FAT32
+        je .FoundFAT32
+    cmp byte [bx + MbrPart.PartType], FAT32LBA
+        je .FoundFAT32
+    cmp byte [bx + MbrPart.PartType], HIDFAT32
+        je .FoundFAT32
+    cmp byte [bx + MbrPart.PartType], HIDFAT32LBA
+        je .FoundFAT32
+    add bx, 0x10
+    cmp bx, ax
+        je .NotFoundFAT32
+    jmp .loop
+    .NotFoundFAT32:
+    xor bx, bx
+    .FoundFAT32:
+    mov ax, bx
+
+    pop ds
+    pop bx
+	leave
+	ret
+	%pop
+
 
 
 global DiskIntex

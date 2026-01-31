@@ -9,7 +9,6 @@ pop ds
 sti
 
 mov byte [DiskIndexBoot], dl
-
 ;Obliczanie długości bootloadera w sektorach AL=SectorPerBootlader
 xor dx, dx
 xor cx, cx
@@ -19,8 +18,6 @@ div bx
 cmp dx, 0x00
 setnz cl
 add al, cl
-
-
 
 ; Wczytanie programu do RAM pod adres 0x0500
 mov ah, 0x02                    ;Polecenie wczytania sektorów (CHS)
@@ -33,10 +30,10 @@ push START_SEGMENT              ;Segment pod który wcztujemy dane
 pop es
 int 13h
     jc PrintErrLoadBootloader
-push START_SEGMENT
-pop ds
-mov dl, byte [DiskIndexBoot]
 
+mov dl, byte [DiskIndexBoot]
+mov ax, START_SEGMENT
+mov ds, ax
 jmp START_SEGMENT:0x00
 
 PrintErrLoadBootloader:
