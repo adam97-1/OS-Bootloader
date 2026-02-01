@@ -152,12 +152,13 @@ Fat32PrintFoldersAndFiles gs, 0x00
 
 newLine
 Fat32LoadFolderOrFile FAT_SEGMENT, 0x0000, FAT_SEGMENT, 0x0000, ds, NameUpperTest
+xchg bx, bx
 jmp $
 
 
 MsgErrLoadSector: db "Load Sector Error: ", 0x00
 
-FolderNameTest: db " "
+FolderNameTest: times 12 db 0x00
 NameUpperTest: db "os/boot/kenr.ab", 0x00
 
 MsgErrFindFAT32: db "Not found FAT32 partitions.", 0x00

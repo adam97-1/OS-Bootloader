@@ -27,7 +27,7 @@ extern FunPrintChar
 
     call FunPrintByteHex
 
-    add sp, 1
+    add sp, 2
 %endmacro
 
 %macro printWordHex 1

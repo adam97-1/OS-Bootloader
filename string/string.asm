@@ -12,7 +12,10 @@ FunStringCmp:
     push    bp
     mov     bp, sp
 
-    pusha
+    push    cx
+    push    si
+    push    di
+    push    bx
     push    ds
     push    es
 
@@ -20,24 +23,32 @@ FunStringCmp:
     mov     bx, ax
     stringLen [segString2], [offsetString2]
     cmp     ax, bx
-        jne end_NoEqual
+        jne .noEqual
 
-    mov     ax, [segString2]
-    mov     es, ax
-    mov     ax, [offsetString2]
-    mov     di, ax
+    mov     cx, ax
+    mov     ds, [segString1]
+    mov     si, [offsetString1]
+    mov     es, [segString2]
+    mov     di, [offsetString2]
+
 
     cld
-    repe    cmpsb
+    repe cmpsb
+        je .equal
 
-    end_NoEqual:
+    .noEqual:
+    mov     ax, 0
+    jmp .end
+    .equal:
     mov     ax, 1
-    cmp     ax, 0
-    end_Equal:
-
+    jmp .end
+    .end:
     pop es
     pop ds
-    popa
+    pop bx
+    pop di
+    pop si
+    pop cx
 
     leave
     ret
@@ -93,11 +104,8 @@ FunStringtoUpper:
     push ds
 
 
-    mov ax, [segString]
-    mov ds, ax
-    mov ax, [offsetString]
-    mov si, ax
-
+    mov ds, [segString]
+    mov si, [offsetString]
     jmp .skip
     .loop:
     inc     si
@@ -108,7 +116,7 @@ FunStringtoUpper:
         jbe .loop
     cmp     byte [ds:si], 0x7B
         jae .loop
-    mov     al, byte [ds:si]
+    mov al, byte [ds:si]
     sub al, 0x20
     mov     byte [ds:si], al
     jmp .loop

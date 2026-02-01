@@ -69,7 +69,7 @@ FunFat32PopFolderFromPath:
     sub si, cx
     mov byte [ds:si], 0x00
     .end:
-    mov byte [es:di], 0x00
+    mov byte [ds:di], 0x00
 
     pop es
     pop ds
@@ -108,7 +108,6 @@ FunFat32PrintFoldersAndFiles:
         je .loop
     mov bx, bp
     sub bx, tempStringOffset
-    xchg bx, bx
     Fat32GetDirOrFileName ds, si, ss, bx
     printStringLn ss, bx
     jmp .loop
@@ -122,11 +121,10 @@ FunFat32PrintFoldersAndFiles:
 	%pop
 
 
-global Fun32FatCheckMaxFilesInCluster
-Fun32FatCheckMaxFilesInCluster:
+global FunFat32CheckMaxFilesInCluster
+FunFat32CheckMaxFilesInCluster:
 
     pusha
-        xchg bx, bx
 
     xor eax, eax
     xor edx, edx
@@ -146,28 +144,32 @@ FunFat32LoadFolderOrFile:
     %push
 	%stacksize large
 	%arg destSegAddress:word, destOffsetAddress:word, segFolder:word, offsetFolder:word, segPath:word, offsetPath:word
-	%define tempString1Offset 1
-	%define tempString2Offset 13
+	%define tempString1Offset 12
+	%define tempString2Offset tempString1Offset + 18
 
-    sub sp, 18
-    sub sp, 12
+    push bp
+    mov bp, sp
+
+    sub sp, tempString2Offset
 
     pusha
     push ds
     push es
+
+
     xor cx, cx
-    mov es, word [destOffsetAddress]
-    mov si, word [segFolder]
-    mov ax, word [offsetPath]
-    mov bx, word [segPath]
+    mov es, word [segFolder]
+    mov ax, word [segPath]
+    mov bx, word [offsetPath]
     mov di, bp
     add di, tempString1Offset
+
     stringtoUpper ax, bx
     Fat32PopFolderFromPath ax, bx, ss, di
-    cmp byte [es:si + FileFat.Atribute], 0x08
+    cmp byte [es:offsetFolder + FileFat.Atribute], 0x08
      je .NoFoundFolderOrFile
     .loop:
-    pop ds
+    push ds
     push START_SEGMENT
     pop ds
     cmp ecx, dword [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.MaxFilesInCluster]
@@ -177,20 +179,16 @@ FunFat32LoadFolderOrFile:
     add di, tempString1Offset
     mov ax, bp
     add ax, tempString2Offset
-    Fat32GetDirOrFileName ss, ax, es, si
+    Fat32GetDirOrFileName word [segFolder], word [offsetFolder], ss, ax
     stringCmp ss, di, ss, ax
+
     je .foundFolderOrFile
     jne .NoFoundFolderOrFile
     .back:
-    printStringLn ss, di
-    printStringLn ss, ax
-
     pop es
     pop ds
     popa
-
-    add sp, 12
-    add sp, 18
+    add sp, tempString2Offset
     leave
 	ret
 
@@ -198,6 +196,9 @@ FunFat32LoadFolderOrFile:
         ;Wczytać plik.
         ;Jężeli Path ma długość 0 to wyjść z funkcji.
         ;W przeciwnym wypatku uruchomić rekurencyjnie tą funckję.
+        printString START_SEGMENT, .MsgFoundFileOrDir
+        printStringLn ss, di
+
         jmp .back
     .NoFoundFolderOrFile:
         inc cx
@@ -211,6 +212,8 @@ FunFat32LoadFolderOrFile:
         jmp .back
 
     .MsgNoFileInThisCluster: db "No file in this cluster.", 0x00
+    .MsgFoundFileOrDir: db "Found file or directory: ", 0x00
+
     %pop
 
 FunFat32GetDirOrFileName:

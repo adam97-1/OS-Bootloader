@@ -16,7 +16,8 @@ extern FunStringtoUpper
 
     call FunStringCmp
 
-    add sp, 12
+    add sp, 8
+    cmp ax, 0x01
 %endmacro
 
 ;Args: segString, offsetString
@@ -32,8 +33,8 @@ extern FunStringtoUpper
 
 ;Args: segString, offsetString
 %macro stringtoUpper 2
-    push %1
     push %2
+    push %1
 
     call FunStringtoUpper
 
