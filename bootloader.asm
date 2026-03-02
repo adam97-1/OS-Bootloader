@@ -32,22 +32,33 @@ LoadPartiction:
 printStringLn START_SEGMENT, MsgLoadPart
 
 ;Kopia danych o partycji FAT32
-cld
-mov cx, 16
-push BOOT_SEGMENT_RAM
-pop ds
-push START_SEGMENT
-pop es
-mov si, ax
-mov di, Fat32PartStartAddress
-rep movsb
-push START_SEGMENT
-pop ds
-push BOOT_SEGMENT_RAM
-pop es
+; cld
+; mov cx, 16
+; push BOOT_SEGMENT_RAM
+; pop ds
+; push START_SEGMENT
+; pop es
+; mov si, ax
+; mov di, FAT_MbrPartDataAddress
+; rep movsb
+; push START_SEGMENT
+; pop ds
+; push BOOT_SEGMENT_RAM
+; pop es
+
+xchg bx, bx
+mov bx, BOOT_SEGMENT_RAM
+mov fs, bx
+mov bx, START_SEGMENT
+mov ds, bx
+add ax, MbrPart.FirstLbaSect
+mov bx, ax
+
+mov eax, dword [fs:bx]
+mov dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.PartSectOffset], eax
 
 ;Wczytanie pierwszego sektora partcji FAT32
-diskLoadLBASectors FAT_SEGMENT, 0x0000, dword 0x0000, dword [Fat32PartStartAddress + MbrPart.FirstLbaSect], 0x0001
+diskLoadLBASectors FAT_SEGMENT, 0x0000, dword 0x0000, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.PartSectOffset], 0x0001
 cmp ah, 0x00
     jne .PrintErrBootSector
 jmp .AnalysisPartition
@@ -68,79 +79,79 @@ mov gs, ax
 
 ;Wyświetlenie inforamcji pomocniczych
 newLine
-printString START_SEGMENT, MsgBytePerSector
-printWordHexLn word [gs:Fat.BytePerSector]
+printString START_SEGMENT, MsgBPB_BytsPerSec
+printWordHexLn word [gs:FAT_BPB.BPB_BytsPerSec]
 
-printString START_SEGMENT, MsgSectorPerCluster
+printString START_SEGMENT, MsgBPB_SecPerClus
 xor ax, ax
-mov al, byte [gs:Fat.SectorPerCluster]
+mov al, byte [gs:FAT_BPB.BPB_SecPerClus]
 printByteHexLn ax
 
-printString START_SEGMENT, MsgReservedSectors
-printWordHexLn word [gs:Fat.ReservedSectors]
+printString START_SEGMENT, MsgBPB_RsvdSecCnt
+printWordHexLn word [gs:FAT_BPB.BPB_RsvdSecCnt]
 
-printString START_SEGMENT, MsgSectorPerFat32
-printWordHexLn word [gs:Fat.SectorPerFat32]
+printString START_SEGMENT, MsgBPB_FATSz32
+printDWordHexLn dword [gs:FAT_BPB_FAT32.BPB_FATSz32]
 
-printString START_SEGMENT, MsgClusterRootDir
-printWordHexLn word [gs:Fat.ClusterRootDir]
+printString START_SEGMENT, MsgBPB_RootClus
+printWordHexLn word [gs:FAT_BPB_FAT32.BPB_RootClus]
 
 ;Obliczenie ile sektorów dysku przypada na sektor partycji
 xor eax, eax
 xor edx, edx
-mov ax, word [gs:Fat.BytePerSector]
+mov ax, word [gs:FAT_BPB.BPB_BytsPerSec]
 mov ebx, SizeDiskSector
 div ebx
-mov byte [Fat32PartMetaDataAddress +  Fat32PartMetaData.DiskSectorPerPartSector], al
+mov byte [FAT_FatMetaDataAddress +  Fat_MetaData.DiskSectorPerPartSector], al
 
 ;Wyświetlenie ile sektorów dysku przypada na sektor partycji
 printString START_SEGMENT, MsgDiskSectorPerPartSector
 xor ax, ax
-mov al, byte [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.DiskSectorPerPartSector]
+mov al, byte [ds:FAT_FatMetaDataAddress + Fat_MetaData.DiskSectorPerPartSector]
 printByteHexLn ax
 
 ;Obliczenie w którm sektorze znajduje się Root Directory
-mov eax, dword [gs:Fat.SectorPerFat32]
+mov eax, dword [gs:FAT_BPB_FAT32.BPB_FATSz32]
 mov ebx, 0x02
 mul ebx
 xor ebx, ebx
-mov bx,  word [gs:Fat.ReservedSectors]
+mov bx,  word [gs:FAT_BPB.BPB_RsvdSecCnt]
 add eax, ebx
 xor ebx, ebx
-mov bl, byte [Fat32PartMetaDataAddress + Fat32PartMetaData.DiskSectorPerPartSector]
+mov bl, byte [FAT_FatMetaDataAddress + Fat_MetaData.DiskSectorPerPartSector]
 mul ebx
 
-add eax, dword [Fat32PartStartAddress + MbrPart.FirstLbaSect]
-mov dword [Fat32PartMetaDataAddress + Fat32PartMetaData.RootDirSector], eax
+add eax, dword [FAT_MbrPartDataAddress + MbrPart.FirstLbaSect]
+mov dword [FAT_FatMetaDataAddress + Fat_MetaData.RootDirSectors], eax
 
 ;Wyświetlenie w którm sektorze znajduje się Root Directory
 printString START_SEGMENT, MsgRootDirSector
-printDWordHexLn dword [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.RootDirSector]
+printDWordHexLn dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.RootDirSectors]
 
 
 ;Obliczenie ile przpada sektorów dysku na cluster w partycji
 xor bx, bx
-mov ax, word [gs:Fat.BytePerSector]
-mov bl, byte [gs:Fat.SectorPerCluster]
+mov ax, word [gs:FAT_BPB.BPB_BytsPerSec]
+mov bl, byte [gs:FAT_BPB.BPB_SecPerClus]
 mul bx
 xor bx, bx
-mov bl, byte [Fat32PartMetaDataAddress + Fat32PartMetaData.DiskSectorPerPartSector]
+mov bl, byte [FAT_FatMetaDataAddress + Fat_MetaData.DiskSectorPerPartSector]
 mul bx
 
 xor bx, bx
 mov bx, SizeDiskSector
 div bx
-mov word [Fat32PartMetaDataAddress + Fat32PartMetaData.ClusterSizeInSector], ax
+mov word [FAT_FatMetaDataAddress + Fat_MetaData.ClusterSizeInSector], ax
 
 ;Wyświetlenie ile przpada sektorów dysku na cluster w partycji
 printString START_SEGMENT, MsgClusterSize
-printWordHexLn word [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.ClusterSizeInSector]
+printWordHexLn word [ds:FAT_FatMetaDataAddress + Fat_MetaData.ClusterSizeInSector]
 Fat32CheckMaxFilesInCluster
 printString START_SEGMENT, MsgMaxFilesInCluster
-printWordHexLn dword [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.MaxFilesInCluster]
+printWordHexLn dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.MaxFilesInCluster]
 
 ;Wczytanie Root Directory
-diskLoadLBASectors FAT_SEGMENT, 0x0000, dword 0x00000000, dword [Fat32PartMetaDataAddress + Fat32PartMetaData.RootDirSector], 1
+diskLoadLBASectors FAT_SEGMENT, 0x0000, dword 0x00000000, dword [FAT_FatMetaDataAddress + Fat_MetaData.RootDirSectors], 1
 cmp ah, 0x00
     jne .PrintErrBootSector
 
@@ -167,15 +178,15 @@ MsgLoadBootloader: db "Loaded Bootloader.", 0x00
 
 MsgLoadPart: db "Loaded first serctor of FAT32.", 0x00
 
-MsgBytePerSector: db "Fat.BytePerSector: ", 0x00
+MsgBPB_BytsPerSec: db "FAT_BPB.BPB_BytsPerSec: ", 0x00
 
-MsgSectorPerFat32: db "Fat.SectorPerFat32: ", 0x00
+MsgBPB_FATSz32: db "FAT_BPB_FAT32.BPB_FATSz32: ", 0x00
 
-MsgReservedSectors: db "Fat.ReservedSectors: ", 0x00
+MsgBPB_RsvdSecCnt: db "FAT_BPB.BPB_RsvdSecCnt: ", 0x00
 
-MsgSectorPerCluster: db "Fat.SectorPerCluster: ", 0x00
+MsgBPB_SecPerClus: db "FAT_BPB.BPB_SecPerClus: ", 0x00
 
-MsgClusterRootDir: db "Fat.ClusterRootDir: ", 0x00
+MsgBPB_RootClus: db "FAT_BPB_FAT32.BPB_RootClus: ", 0x00
 
 MsgDiskSectorPerPartSector: db "DiskSectorPerPartSector: ", 0x00
 

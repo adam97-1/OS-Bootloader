@@ -129,11 +129,11 @@ FunFat32CheckMaxFilesInCluster:
     xor eax, eax
     xor edx, edx
     xor ebx, ebx
-    mov ax, word [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.ClusterSizeInSector]
-    mov bl, byte [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.DiskSectorPerPartSector]
+    mov ax, word [ds:FAT_FatMetaDataAddress + Fat_MetaData.ClusterSizeInSector]
+    mov bl, byte [ds:FAT_FatMetaDataAddress + Fat_MetaData.DiskSectorPerPartSector]
     mul ebx
     shl eax, 4
-    mov word [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.MaxFilesInCluster], ax
+    mov word [ds:FAT_FatMetaDataAddress + Fat_MetaData.MaxFilesInCluster], ax
 
     popa
     ret
@@ -167,12 +167,12 @@ FunFat32LoadFolderOrFile:
     stringtoUpper ax, bx
     Fat32PopFolderFromPath ax, bx, ss, di
     cmp byte [es:offsetFolder + FileFat.Atribute], 0x08
-     je .NoFoundFolderOrFile
+        je .NoFoundFolderOrFile
     .loop:
     push ds
     push START_SEGMENT
     pop ds
-    cmp ecx, dword [ds:Fat32PartMetaDataAddress + Fat32PartMetaData.MaxFilesInCluster]
+    cmp ecx, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.MaxFilesInCluster]
     pop ds
         je .NoFilesInThisCluster
     mov di, bp
@@ -198,7 +198,6 @@ FunFat32LoadFolderOrFile:
         ;W przeciwnym wypatku uruchomić rekurencyjnie tą funckję.
         printString START_SEGMENT, .MsgFoundFileOrDir
         printStringLn ss, di
-
         jmp .back
     .NoFoundFolderOrFile:
         inc cx
@@ -278,9 +277,31 @@ FunFat32GetDirOrFileName:
 	ret
 
 
-global Fat32PartMetaDataAddress
-Fat32PartMetaDataAddress: times Fat32PartMetaData.StructSize  db 0x00
+global FunFat32ClusterToAddress
+FunFat32ClusterToAddress:
+    %push
+    %stacksize large
+    %arg numberOfCluster:word
 
-global Fat32PartStartAddress
-Fat32PartStartAddress: times 16  db 0x00
+    push bp
+    mov sp, bp
+
+    xor dx, dx
+    mov ax, word [numberOfCluster]
+    sub ax, 2
+
+    mov bx, START_SEGMENT
+    mov ds, bx
+    ; mul ds:
+
+    leave
+    ret
+    %pop
+
+global FAT_FatMetaDataAddress
+FAT_FatMetaDataAddress: times Fat_MetaData.StructSize  db 0x00
+
+global FAT_MbrPartDataAddress
+FAT_MbrPartDataAddress: times 16  db 0x00
+
 
