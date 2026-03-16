@@ -9,8 +9,13 @@ extern FunFat32PrintFoldersAndFiles
 extern FunFat32CheckMaxFilesInCluster
 extern FunFat32LoadFolderOrFile
 extern FunFat32ClusterToAddress
+extern FunFat32Init
+extern FunFat32CopyBPB
+extern FunFat32CheckFatType
+extern FunFat32CalcRootDirSectors
 
 extern FAT_FatMetaDataAddress
+extern FAT_BPBAddress
 extern FAT_MbrPartDataAddress
 %endif
 
@@ -89,6 +94,32 @@ extern FAT_MbrPartDataAddress
     add sp, 12
 %endmacro
 
+;Args: SegmentBPB, OffsetBPB
+%macro Fat32Init 2
+    push %2
+    push %1
+
+    call FunFat32Init
+
+    add sp, 4
+%endmacro
+
+;Args: SegmentBPB, OffsetBPB
+%macro Fat32CopyBPB 2
+    push %2
+    push %1
+
+    call FunFat32CopyBPB
+
+    add sp, 4
+%endmacro
+
+%macro Fat32CalcRootDirSectors 0
+
+    call FunFat32CalcRootDirSectors
+
+%endmacro
+
 struc FAT_BPB
     .BS_jmpBoot resb 3
     .BS_OEMName resb 8
@@ -153,6 +184,8 @@ endstruc
 struc Fat_MetaData
     .RootDirSectors resb 4
     .FATSz resb 4
+    .TotSec resb 4
+    .DataSec resb 4
     .FirstDataSector resb 4
     .MaxFilesInCluster resb 2
     .DiskSectorPerPartSector resb 1

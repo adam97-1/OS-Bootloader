@@ -284,7 +284,7 @@ FunFat32ClusterToAddress:
     %arg numberOfCluster:word
 
     push bp
-    mov sp, bp
+    mov bp, sp
 
     xor dx, dx
     mov ax, word [numberOfCluster]
@@ -298,10 +298,168 @@ FunFat32ClusterToAddress:
     ret
     %pop
 
+global FunFat32Init
+FunFat32Init:
+    %push
+    %stacksize large
+    %arg segBPB:word, offsetBPB:word
+
+    push bp
+    mov bp, sp
+
+    Fat32CopyBPB word [segBPB], word [offsetBPB]
+    Fat32CalcRootDirSectors
+    Fat32CheckFatType
+    Fat32CheckMaxFilesInCluster
+
+    leave
+    ret
+    %pop
+
+global FunFat32CopyBPB
+FunFat32CopyBPB:
+    %push
+    %stacksize large
+    %arg segBPB:word, offsetBPB:word
+
+    push bp
+    mov bp, sp
+
+    push ax
+    push si
+    push di
+    push ds
+    push es
+
+    cld
+    mov cx, 512
+    mov ax, word [segBPB]
+    mov ds, ax
+    mov ax, START_SEGMENT
+    mov es, ax
+    mov si, word [offsetBPB]
+    mov di, FAT_BPBAddress
+    rep movsb
+
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop ax
+
+    leave
+    ret
+    %pop
+
+
+global FunFat32CheckFatType
+FunFat32CheckFatType:
+    %push
+
+    push bp
+    mov bp, sp
+    push eax
+    push edx
+    push ebx
+
+    xor eax, eax
+    mov ax, word [ds:FAT_BPBAddress + FAT_BPB.BPB_FATSz16]
+    cmp ax, 0x00
+    je .skip1
+        mov eax, dword [ds:FAT_BPBAddress + FAT_BPB_FAT32.BPB_FATSz32]
+    .skip1:
+    mov dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.FATSz], eax
+
+    xor eax, eax
+    mov ax, word [ds:FAT_BPBAddress + FAT_BPB.BPB_TotSec16]
+    cmp ax, 0x00
+    je .skip2
+        mov eax, dword [ds:FAT_BPBAddress + FAT_BPB.BPB_TotSec32]
+    .skip2:
+    mov dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.TotSec], eax
+
+    xor edx, edx
+    mov eax, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.FATSz]
+    mov bl, byte [ds:FAT_BPBAddress + FAT_BPB.BPB_NumFATs]
+    mul ebx
+
+    xor ebx, ebx
+    mov bx, word [ds:FAT_BPBAddress + FAT_BPB.BPB_RsvdSecCnt]
+    add eax, ebx
+    add eax, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.RootDirSectors]
+
+    mov ebx, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.TotSec]
+    sub ebx, eax
+
+    mov dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.DataSec], ebx
+
+    xor edx, edx
+    mov eax, ebx
+    xor ebx, ebx
+    mov bl, byte [ds:FAT_BPBAddress + FAT_BPB.BPB_SecPerClus]
+    div ebx
+
+    cmp eax, 4085
+    jb .fat12
+    cmp eax, 65525
+    jb .fat16
+    jmp .fat32
+
+    .fat12:
+        mov byte [ds:FAT_FatMetaDataAddress + Fat_MetaData.FatType], FAT12
+        jmp .exit
+    .fat16:
+        mov byte [ds:FAT_FatMetaDataAddress + Fat_MetaData.FatType], FAT16
+        jmp .exit
+    .fat32:
+        mov byte [ds:FAT_FatMetaDataAddress + Fat_MetaData.FatType], FAT32
+
+    .exit:
+    pop eax
+    pop edx
+    pop ebx
+    leave
+    ret
+    %pop
+
+global FunFat32CalcRootDirSectors
+FunFat32CalcRootDirSectors:
+    %push
+
+    push bp
+    mov bp, sp
+
+    push eax
+    push ebx
+    push edx
+
+    xor ebx, ebx
+    xor eax, eax
+    xor edx, edx
+    mov ax, word [ds:FAT_BPBAddress + FAT_BPB.BPB_RootEntCnt]
+    mov bx, 32
+    mul ebx
+    mov bx, word [ds:FAT_BPBAddress + FAT_BPB.BPB_BytsPerSec]
+    add eax, ebx
+    sub eax, 1
+    xor edx, edx
+    div ebx
+    mov dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.RootDirSectors], eax
+
+    pop eax
+    pop ebx
+    pop edx
+    leave
+    ret
+    %pop
+
 global FAT_FatMetaDataAddress
 FAT_FatMetaDataAddress: times Fat_MetaData.StructSize  db 0x00
 
+global FAT_BPBAddress
+FAT_BPBAddress: times 512  db 0x00
+
 global FAT_MbrPartDataAddress
-FAT_MbrPartDataAddress: times 16  db 0x00
+FAT_MbrPartDataAddress: times 16 db 0x00
 
 

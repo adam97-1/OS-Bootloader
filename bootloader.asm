@@ -31,22 +31,7 @@ LoadPartiction:
 ;Wyświetlenie komunikatu o wczytaniu pierwszego sektora partycji FAT32
 printStringLn START_SEGMENT, MsgLoadPart
 
-;Kopia danych o partycji FAT32
-; cld
-; mov cx, 16
-; push BOOT_SEGMENT_RAM
-; pop ds
-; push START_SEGMENT
-; pop es
-; mov si, ax
-; mov di, FAT_MbrPartDataAddress
-; rep movsb
-; push START_SEGMENT
-; pop ds
-; push BOOT_SEGMENT_RAM
-; pop es
-
-xchg bx, bx
+;Zapisanie offsetu partaycji od począdku dysku.
 mov bx, BOOT_SEGMENT_RAM
 mov fs, bx
 mov bx, START_SEGMENT
@@ -76,6 +61,8 @@ jmp $
 ;Przypiasnie segmetu GS do danych w partychi FAT32
 mov ax, FAT_SEGMENT
 mov gs, ax
+
+Fat32Init gs, 0x0000
 
 ;Wyświetlenie inforamcji pomocniczych
 newLine
