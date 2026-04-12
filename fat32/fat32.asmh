@@ -13,6 +13,9 @@ extern FunFat32Init
 extern FunFat32CopyBPB
 extern FunFat32CheckFatType
 extern FunFat32CalcRootDirSectors
+extern FunFat32CalcDiskSectToPartSect
+extern FunFat32CalcFirstDataSector
+extern FunFat32CalcAddressSect
 
 extern FAT_FatMetaDataAddress
 extern FAT_BPBAddress
@@ -120,6 +123,26 @@ extern FAT_MbrPartDataAddress
 
 %endmacro
 
+%macro Fat32CalcDiskSectToPartSect 0
+    call FunFat32CalcDiskSectToPartSect
+%endmacro
+
+%macro Fat32CheckFatType 0
+    call FunFat32CheckFatType
+%endmacro
+
+%macro Fat32CalcFirstDataSector 0
+    call FunFat32CalcFirstDataSector
+%endmacro
+
+%macro Fat32CalcAddressSect 1
+    push %1
+
+    call FunFat32CalcAddressSect
+
+    add sp, 4
+%endmacro
+
 struc FAT_BPB
     .BS_jmpBoot resb 3
     .BS_OEMName resb 8
@@ -179,6 +202,7 @@ struc FileFat
     .WriteData resb 2
     .FirstClusterLo resb 2
     .FileSize resb 4
+    .structSize resb 0
 endstruc
 
 struc Fat_MetaData

@@ -145,9 +145,9 @@ FunPrintDWordHex:
 	printChar '0'
 	printChar 'x'
 
-	mov ecx, dword [num]
+	mov ecx, dword [num - 4]
 	call _FunPrintWordHex
-	ror ecx, 0x10
+	mov ecx, dword [num]
 	call _FunPrintWordHex
 
 	popa

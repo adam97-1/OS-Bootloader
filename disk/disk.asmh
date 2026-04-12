@@ -4,7 +4,10 @@
 %ifndef DISK_IMPLEMENTATION
 extern FunDiskLoadLBASectors
 extern FunDiskFindMBR
+extern FunDiskCopyMBR
+
 extern DiskIntex
+extern DISK_MBRPDataAddress
 %endif
 
 ;Args: segmentDest, offsetDest, sectorHi, sectorLo, count
@@ -31,6 +34,15 @@ extern DiskIntex
     add sp, 4
 %endmacro
 
+%macro DiskCopyMBR 2
+    push %2
+    push %1
+
+    call FunDiskCopyMBR
+
+    add sp, 4
+%endmacro
+
 struc DAP_st
     .size     resb 1
     .null     resb 1
@@ -40,22 +52,24 @@ struc DAP_st
     .structSize resb 0
 endstruc
 
-struc Mbr
+struc DISK_Mbr
     .BootArea resb 446
     .Part1 resb 16
     .Part2 resb 16
     .Part3 resb 16
     .Part4 resb 16
     .BootSig resb 2
+    .structSize resb 0
 endstruc
 
-struc MbrPart
+struc DISK_MbrPartData
     .StatusDrive resb 1
     .FirstChsSect resb 3
     .PartType resb 1
     .LastChsSect resb 3
     .FirstLbaSect resb 4
     .NumberOfSect resb 4
+    .structSize resb 0
 endstruc
 
 

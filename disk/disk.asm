@@ -83,17 +83,17 @@ FunDiskFindMBR:
 	mov ds, word [segAddress]
 	mov bx, word [offsetAddress]
 
-    lea bx, [bx + Mbr.Part1]
+    lea bx, [bx + DISK_Mbr.Part1]
     mov ax, bx
     add ax, 0x40
     .loop:
-    cmp byte [bx + MbrPart.PartType], FAT32
+    cmp byte [bx + DISK_MbrPartData.PartType], FAT32
         je .FoundFAT32
-    cmp byte [bx + MbrPart.PartType], FAT32LBA
+    cmp byte [bx + DISK_MbrPartData.PartType], FAT32LBA
         je .FoundFAT32
-    cmp byte [bx + MbrPart.PartType], HIDFAT32
+    cmp byte [bx + DISK_MbrPartData.PartType], HIDFAT32
         je .FoundFAT32
-    cmp byte [bx + MbrPart.PartType], HIDFAT32LBA
+    cmp byte [bx + DISK_MbrPartData.PartType], HIDFAT32LBA
         je .FoundFAT32
     add bx, 0x10
     cmp bx, ax
@@ -110,7 +110,45 @@ FunDiskFindMBR:
 	ret
 	%pop
 
+global FunDiskCopyMBR
+FunDiskCopyMBR:
+    %push
+    %stacksize large
+    %arg segAddress:word, offsetAddress:word
+    push bp
+    mov bp, sp
+
+    push ax
+    push si
+    push di
+    push ds
+    push es
+
+    cld
+    mov cx, DISK_MbrPartData.structSize
+    mov ax, word [segAddress]
+    mov ds, ax
+    mov ax, START_SEGMENT
+    mov es, ax
+    mov si, word [offsetAddress]
+    mov di, DISK_MBRPDataAddress
+    rep movsb
+
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop ax
+
+    leave
+    ret
+    %pop
+
 
 
 global DiskIntex
 DiskIntex: db 0x00
+
+global DISK_MBRPDataAddress
+DISK_MBRPDataAddress: times DISK_Mbr.structSize db 0x00
+
