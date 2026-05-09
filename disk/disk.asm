@@ -59,7 +59,9 @@ FunDiskLoadLBASectors:
 
     mov si, bp
     sub si, DAP_st.structSize
+
     int 0x13
+
     pop ds
     pop ebx
     pop dx

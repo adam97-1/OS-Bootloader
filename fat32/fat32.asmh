@@ -143,6 +143,24 @@ extern FAT_MbrPartDataAddress
     add sp, 4
 %endmacro
 
+%macro Fat32LoadRootDir 2
+
+    push eax
+    push bx
+   
+    xor bx, bx
+    mov bl, byte [ds:FAT_BPBAddress + FAT_BPB.BPB_SecPerClus]
+   
+    Fat32CalcAddressSect 2
+    diskLoadLBASectors %1, %2, dword 0x00000000, eax, bx
+    
+
+    pop bx
+    pop eax
+
+
+%endmacro
+
 struc FAT_BPB
     .BS_jmpBoot resb 3
     .BS_OEMName resb 8
@@ -194,6 +212,7 @@ struc FileFat
     .ShortName resb 11
     .Atribute resb 1
     .Res1 resb 1
+    .DIR_CrtTimeTenth resb 1
     .CreateTime resb 2
     .CreateDate resb 2
     .LastAccessDate resb 2
@@ -213,7 +232,6 @@ struc Fat_MetaData
     .FirstDataSector resb 4
     .MaxFilesInCluster resb 2
     .DiskSectorPerPartSector resb 1
-    .ClusterSizeInSector resb 2
     .FatType resb 1
     .PartSectOffset resb 4
     .StructSize resb 0

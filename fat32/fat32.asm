@@ -134,7 +134,7 @@ FunFat32CheckMaxFilesInCluster:
     xor eax, eax
     xor edx, edx
     xor ebx, ebx
-    mov ax, word [ds:FAT_FatMetaDataAddress + Fat_MetaData.ClusterSizeInSector]
+    mov ax, word [ds:FAT_BPBAddress + FAT_BPB.BPB_SecPerClus]
     mov bl, byte [ds:FAT_FatMetaDataAddress + Fat_MetaData.DiskSectorPerPartSector]
     mul ebx
     shl eax, 4
@@ -160,16 +160,27 @@ FunFat32LoadFolderOrFile:
     pusha
     push ds
     push es
+    push gs
 
     xor cx, cx
     mov es, word [segFolder]
-    mov ax, word [segPath]
+    mov gs, word [segPath]
     mov bx, word [offsetPath]
     mov si, word [offsetFolder]
     mov di, bp
     sub di, tempString1Offset
 
-    ;Pomiń gdy pierwszy folder to RootDir
+
+    cmp byte [gs:bx], 0x00
+        je .back
+    stringtoUpper gs, bx
+    Fat32PopFolderFromPath gs, bx, ss, di
+
+
+    cmp byte [es:offsetFolder + FileFat.Atribute], 0x08
+        je .NoFoundFolderOrFile
+
+        ;Pomiń gdy pierwszy folder to RootDir
     cmp word [es:si + FileFat.FirstClusterHi], word 0x00
         jne .noSkipFirstFolder
     cmp word [es:si + FileFat.FirstClusterLo], word 0x00
@@ -178,10 +189,7 @@ FunFat32LoadFolderOrFile:
     jmp .NoFoundFolderOrFile
 
     .noSkipFirstFolder:
-    stringtoUpper ax, bx
-    Fat32PopFolderFromPath ax, bx, ss, di
-    cmp byte [es:offsetFolder + FileFat.Atribute], 0x08
-        je .NoFoundFolderOrFile
+
     .loop:
     push ds
     push START_SEGMENT
@@ -189,17 +197,19 @@ FunFat32LoadFolderOrFile:
     cmp ecx, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.MaxFilesInCluster]
     pop ds
         je .NoFilesInThisCluster
-    mov di, bp
-    sub di, tempString1Offset
+    ; mov di, bp
+    ; sub di, tempString1Offset
     mov ax, bp
     sub ax, tempString2Offset
-    Fat32GetDirOrFileName word [segFolder], si, ss, ax
-    xchg bx, bx
+    Fat32GetDirOrFileName es, si, ss, ax
     stringCmp ss, di, ss, ax
+    xchg bx, bx
+
 
     je .foundFolderOrFile
     jne .NoFoundFolderOrFile
     .back:
+    pop gs
     pop es
     pop ds
     popa
@@ -213,6 +223,17 @@ FunFat32LoadFolderOrFile:
         ;W przeciwnym wypatku uruchomić rekurencyjnie tą funckję.
         printString START_SEGMENT, .MsgFoundFileOrDir
         printStringLn ss, di
+        
+        mov ax, word [es:si + FileFat.FirstClusterHi]
+        shl eax, 16
+        mov ax, word [es:si + FileFat.FirstClusterLo]
+
+        Fat32CalcAddressSect eax
+        xor bx, bx
+        mov bl, byte [ds:FAT_BPBAddress + FAT_BPB.BPB_SecPerClus]
+        diskLoadLBASectors word [destSegAddress], word [destOffsetAddress], dword 0x00000000, eax, bx
+        Fat32LoadFolderOrFile word [destSegAddress], word [destOffsetAddress], word [destSegAddress], word [destOffsetAddress], word [segPath], word [offsetPath]
+
         jmp .back
     .NoFoundFolderOrFile:
         inc cx
@@ -536,7 +557,7 @@ global FunFat32CalcAddressSect
 FunFat32CalcAddressSect:
     %push
     %stacksize large
-    %arg numSect:word
+    %arg numSect:dword
 
     push bp
     mov bp, sp
@@ -544,12 +565,11 @@ FunFat32CalcAddressSect:
     push ebx
     push edx
 
-    xchg bx, bx
     xor eax, eax
     xor edx, edx
     mov al, byte [ds:FAT_BPBAddress + FAT_BPB.BPB_SecPerClus]
-    mov bx, [numSect]
-    sub bx, 2
+    mov ebx, [numSect]
+    sub ebx, 2
     mul ebx
     mov ebx, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.FirstDataSector]
     add eax, ebx

@@ -97,16 +97,15 @@ printDWordHexLn dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.RootDirSectors]
 
 ;Wyświetlenie ile przpada sektorów dysku na cluster w partycji
 printString START_SEGMENT, MsgClusterSize
-printWordHexLn word [ds:FAT_FatMetaDataAddress + Fat_MetaData.ClusterSizeInSector]
+printWordHexLn word [ds:FAT_BPBAddress + FAT_BPB.BPB_SecPerClus]
 Fat32CheckMaxFilesInCluster
 printString START_SEGMENT, MsgMaxFilesInCluster
 printWordHexLn dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.MaxFilesInCluster]
 
 ;Wczytanie Root Directory
-Fat32CalcAddressSect 2
-diskLoadLBASectors FAT_SEGMENT, 0x0000, dword 0x00000000, eax, 1
+Fat32LoadRootDir FAT_SEGMENT, 0x0000
 cmp ah, 0x00
-    jne .PrintErrBootSector
+    jne .PrintErrLoadRootDir
 
 ;Wyświetlenie folderów w Root Directory
 newLine
@@ -116,13 +115,21 @@ Fat32PrintFoldersAndFiles gs, 0x00
 
 newLine
 Fat32LoadFolderOrFile FAT_SEGMENT, 0x0000, FAT_SEGMENT, 0x0000, ds, NameUpperTest
+
+printStringLn START_SEGMENT, MsgEndProg
 jmp $
 
 
+.PrintErrLoadRootDir:
+    printString START_SEGMENT, MsgErrLoadRootDir
+    jmp $
+
 MsgErrLoadSector: db "Load Sector Error: ", 0x00
 
+MsgErrLoadRootDir: db "Load Root Directory Error.", 0x00
+
 FolderNameTest: times 12 db 0x00
-NameUpperTest: db "os/boot/kenr.ab", 0x00
+NameUpperTest: db "os/boot/kern.ab", 0x00
 
 MsgErrFindFAT32: db "Not found FAT32 partitions.", 0x00
 
@@ -149,3 +156,5 @@ MsgClusterSize: db "ClusterSize: ", 0x00
 MsgFoldersFilesRootDir: db "Folders or files in root directory: ", 0x00
 
 MsgMaxFilesInCluster: db "Max Files In Cluster: ", 0x00
+
+MsgEndProg: db "End of Program.", 0x00
