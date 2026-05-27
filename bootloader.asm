@@ -44,7 +44,7 @@ mov eax, dword [fs:bx]
 mov dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.PartSectOffset], eax
 
 ;Wczytanie pierwszego sektora partcji FAT32
-diskLoadLBASectors FAT_SEGMENT, 0x0000, dword 0x0000, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.PartSectOffset], 0x0001
+diskLoadLBASectors FAT_DATA_SEGMENT, 0x0000, dword 0x0000, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.PartSectOffset], 0x0001
 cmp ah, 0x00
     jne .PrintErrBootSector
 jmp .AnalysisPartition
@@ -60,7 +60,7 @@ jmp $
 
 .AnalysisPartition:
 ;Przypiasnie segmetu GS do danych w partychi FAT32
-mov ax, FAT_SEGMENT
+mov ax, FAT_DATA_SEGMENT
 mov gs, ax
 
 Fat32Init gs, 0x0000
@@ -103,7 +103,7 @@ printString START_SEGMENT, MsgMaxFilesInCluster
 printWordHexLn dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.MaxFilesInCluster]
 
 ;Wczytanie Root Directory
-Fat32LoadRootDir FAT_SEGMENT, 0x0000
+Fat32LoadRootDir FAT_DATA_SEGMENT, 0x0000
 cmp ah, 0x00
     jne .PrintErrLoadRootDir
 
@@ -114,7 +114,9 @@ printStringLn START_SEGMENT, MsgFoldersFilesRootDir
 Fat32PrintFoldersAndFiles gs, 0x00
 
 newLine
-Fat32LoadFolderOrFile FAT_SEGMENT, 0x0000, FAT_SEGMENT, 0x0000, ds, NameUpperTest
+Fat32LoadFolderOrFile FAT_DATA_SEGMENT, 0x0000, FAT_DATA_SEGMENT, 0x0000, ds, NameUpperTest
+
+Fat32GetNextCluster dword 8
 
 printStringLn START_SEGMENT, MsgEndProg
 jmp $

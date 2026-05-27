@@ -13,8 +13,8 @@ extern DISK_MBRPDataAddress
 ;Args: segmentDest, offsetDest, sectorHi, sectorLo, count
 %macro diskLoadLBASectors 5
     push %5
-    push %4
-    push %3
+    push dword %4
+    push dword %3
     push %2
     push %1
 

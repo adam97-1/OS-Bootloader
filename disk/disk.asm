@@ -15,7 +15,7 @@ global FunDiskLoadLBASectors
 FunDiskLoadLBASectors:
     %push
     %stacksize large
-    %arg segmentDest:word, offsetDest:word, sector:qword, count:dword
+    %arg segmentDest:word, offsetDest:word, sector:qword, count:word
 
     push bp
     mov bp, sp
@@ -63,8 +63,8 @@ FunDiskLoadLBASectors:
     int 0x13
 
     pop ds
-    pop ebx
     pop dx
+    pop ebx
     add sp, DAP_st.structSize
     leave
     ret

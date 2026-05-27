@@ -203,8 +203,6 @@ FunFat32LoadFolderOrFile:
     sub ax, tempString2Offset
     Fat32GetDirOrFileName es, si, ss, ax
     stringCmp ss, di, ss, ax
-    xchg bx, bx
-
 
     je .foundFolderOrFile
     jne .NoFoundFolderOrFile
@@ -583,6 +581,96 @@ FunFat32CalcAddressSect:
     pop ebx
     leave
     ret
+    %pop
+
+global FunFat32GetNextCluster
+FunFat32GetNextCluster:
+    %push
+    %stacksize large
+    %arg cluster:dword
+    %define ThisFATSecNum 4 ;  size 4
+	%define ThisFATEntOffset  ThisFATSecNum + 2 ; size 2
+    %define FATOffset  ThisFATEntOffset + 4 ; size 4
+
+    push bp
+    mov bp, sp
+
+    sub sp, FATOffset
+
+    push ebx
+    push si
+    push edx
+
+    cmp byte [ds:FAT_FatMetaDataAddress + Fat_MetaData.FatType], FAT12
+        je .fat12
+    cmp byte [ds:FAT_FatMetaDataAddress + Fat_MetaData.FatType], FAT16
+        je .fat16
+    jmp .fat32
+
+
+    .exit:
+    pop edx
+    pop si
+    pop ebx
+    add sp, FATOffset
+    leave
+    ret
+
+    .fat12:
+    jmp .exit
+
+    .fat16:
+    mov eax, dword [cluster]
+    mov ebx, 2
+    mul ebx
+    mov si, bp
+    sub si, FATOffset
+    mov dword [si], ebx
+
+    xor ebx, ebx
+    mov bx, word [ds:FAT_BPBAddress + FAT_BPB.BPB_BytsPerSec]
+    div ebx
+    add ax, word [ds:FAT_BPBAddress + FAT_BPB.BPB_RsvdSecCnt]
+    mov si, bp
+    sub si, ThisFATSecNum
+    mov dword [ss:si], eax
+    mov si, bp
+    sub si, ThisFATEntOffset
+    mov word [ss:si], dx
+
+    jmp .exit
+
+    .fat32:
+    mov eax, dword [cluster]
+    mov ebx, 4
+    mul ebx
+    mov si, bp
+    sub si, FATOffset
+    mov dword [ss:si], ebx
+
+    xor ebx, ebx
+    xor edx, edx
+    mov bx, word [ds:FAT_BPBAddress + FAT_BPB.BPB_BytsPerSec]
+    div ebx
+    add ax, word [ds:FAT_BPBAddress + FAT_BPB.BPB_RsvdSecCnt]
+    mov si, bp
+    sub si, ThisFATSecNum
+    mov dword [ss:si], eax
+    mov si, bp
+    sub si, ThisFATEntOffset
+    mov word [ss:si], dx
+
+    add eax, dword [ds:FAT_FatMetaDataAddress + Fat_MetaData.PartSectOffset]
+    push dx
+    diskLoadLBASectors FAT_SEGMENT, word 0x00, dword 0x00, eax, 1
+    pop dx
+    mov ax, FAT_SEGMENT
+    mov gs, ax
+    mov bx, dx
+    mov eax, dword [gs:bx]
+    jmp .exit
+
+
     %pop
 
 global FAT_FatMetaDataAddress

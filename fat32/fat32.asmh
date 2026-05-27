@@ -8,6 +8,7 @@ extern FunFat32PopFolderFromPath
 extern FunFat32PrintFoldersAndFiles
 extern FunFat32CheckMaxFilesInCluster
 extern FunFat32LoadFolderOrFile
+extern FunFat32GetNextCluster
 extern FunFat32ClusterToAddress
 extern FunFat32Init
 extern FunFat32CopyBPB
@@ -136,7 +137,7 @@ extern FAT_MbrPartDataAddress
 %endmacro
 
 %macro Fat32CalcAddressSect 1
-    push %1
+    push dword %1
 
     call FunFat32CalcAddressSect
 
@@ -160,6 +161,16 @@ extern FAT_MbrPartDataAddress
 
 
 %endmacro
+%macro Fat32GetNextCluster 1
+
+    push %1
+
+    call FunFat32GetNextCluster
+
+    add sp, 4
+    
+%endmacro
+
 
 struc FAT_BPB
     .BS_jmpBoot resb 3
