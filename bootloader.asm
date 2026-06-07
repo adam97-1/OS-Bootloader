@@ -111,15 +111,15 @@ cmp ah, 0x00
 newLine
 printStringLn START_SEGMENT, MsgFoldersFilesRootDir
 
-Fat32PrintFoldersAndFiles gs, 0x00
+Fat32PrintFoldersAndFiles FAT_DATA_SEGMENT, 0x00
 
 newLine
-Fat32LoadFolderOrFile FAT_DATA_SEGMENT, 0x0000, FAT_DATA_SEGMENT, 0x0000, ds, NameUpperTest
-
-Fat32GetNextCluster dword 8
+Fat32LoadFolderOrFile FAT_DATA_SEGMENT, 0x0000, FAT_DATA_SEGMENT, 0x0000, ecx, ds, NameUpperTest
 
 printStringLn START_SEGMENT, MsgEndProg
-jmp $
+
+jmp FAT_DATA_SEGMENT:0x00
+
 
 
 .PrintErrLoadRootDir:
@@ -159,4 +159,4 @@ MsgFoldersFilesRootDir: db "Folders or files in root directory: ", 0x00
 
 MsgMaxFilesInCluster: db "Max Files In Cluster: ", 0x00
 
-MsgEndProg: db "End of Program.", 0x00
+MsgEndProg: db "End of Bootloader program.", 0x00

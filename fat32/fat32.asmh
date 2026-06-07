@@ -17,6 +17,7 @@ extern FunFat32CalcRootDirSectors
 extern FunFat32CalcDiskSectToPartSect
 extern FunFat32CalcFirstDataSector
 extern FunFat32CalcAddressSect
+extern FunFat32LoadRootDir
 
 extern FAT_FatMetaDataAddress
 extern FAT_BPBAddress
@@ -84,10 +85,11 @@ extern FAT_MbrPartDataAddress
 %endmacro
 
 ;Args: DestSegment, DestOffset, FolderSegment, FolderOffset, PathSegment, PathOffset
-%macro Fat32LoadFolderOrFile 6
+%macro Fat32LoadFolderOrFile 7
 
+    push %7
     push %6
-    push %5
+    push dword %5
     push %4
     push %3
     push %2
@@ -95,7 +97,7 @@ extern FAT_MbrPartDataAddress
 
     call FunFat32LoadFolderOrFile
 
-    add sp, 12
+    add sp, 16
 %endmacro
 
 ;Args: SegmentBPB, OffsetBPB
@@ -146,24 +148,17 @@ extern FAT_MbrPartDataAddress
 
 %macro Fat32LoadRootDir 2
 
-    push eax
-    push bx
-   
-    xor bx, bx
-    mov bl, byte [ds:FAT_BPBAddress + FAT_BPB.BPB_SecPerClus]
-   
-    Fat32CalcAddressSect 2
-    diskLoadLBASectors %1, %2, dword 0x00000000, eax, bx
-    
+    push word %2
+    push word %1
 
-    pop bx
-    pop eax
+    call FunFat32LoadRootDir
 
-
+    add sp, 4
 %endmacro
+
 %macro Fat32GetNextCluster 1
 
-    push %1
+    push dword %1
 
     call FunFat32GetNextCluster
 
